@@ -4,11 +4,12 @@ cv2.namedWindow("preview")
 HIGH_VALUE = 10000
 WIDTH = HIGH_VALUE
 HEIGHT = HIGH_VALUE
-
+width_set = 640
+height_set = 480
 capture = cv2.VideoCapture(4)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+capture.set(cv2.CAP_PROP_FRAME_WIDTH, width_set)
+capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height_set)
 width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -21,7 +22,7 @@ else:
     rval = False
 
 while rval:
-    preview = cv2.resize(frame,(384*2,216*2))
+    preview = cv2.resize(frame,(width_set,height_set))
     cv2.imshow("preview", preview)
     rval, frame = capture.read()
     key = cv2.waitKey(20)
