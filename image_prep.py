@@ -7,8 +7,9 @@ ext = 'jpg'
 number_of_images = 5
 comp_list=[]
 size = (200,200)
-
-plan = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/pi_cam_pyramide/cropped5PI_CAM.jpg')
+histSize = [255,255,255]
+method = cv2.HISTCMP_INTERSECT
+plan = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/webcam_pyramide/1.jpg')
 
 #plan = cv2.resize(plan,size)
 #cv2.imshow("plan",plan)
@@ -22,7 +23,7 @@ plan = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos
 #         plt.xlim([0,20])
 # plt.show()
 
-hist1 = cv2.calcHist([plan], [0,1,2], None,[10,10,10],[0, 256, 0, 256, 0, 256])
+hist1 = cv2.calcHist([plan], [0,1,2], None,histSize,[0, 256, 0, 256, 0, 256])
 #ignore all black values in the histogramm
 #hist1[0, 0, 0] = 0
 hist1 = cv2.normalize(hist1, hist1).flatten()
@@ -86,14 +87,14 @@ for i in range(1,number_of_images+1):
     transparent [:,:,3] = filled        
 
   
-    hist2 = cv2.calcHist([org_image], [0,1,2], None,[10,10,10],[0, 256, 0, 256, 0, 256])
+    hist2 = cv2.calcHist([org_image], [0,1,2], None,histSize,[0, 256, 0, 256, 0, 256])
     hist2[0, 0, 0] = 0
     hist2 = cv2.normalize(hist2, hist2).flatten()
     #plt.plot(hist2)
     #plt.xlim([0,256])
     #plt.show()
 
-    comparison = cv2.compareHist(hist1, hist2, cv2.HISTCMP_INTERSECT)
+    comparison = cv2.compareHist(hist1, hist2, method)
     comp_list.append(comparison)
     #print(f'Wert {i} Histogrammvergleich:{comparison}')
 

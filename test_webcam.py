@@ -6,6 +6,7 @@ WIDTH = HIGH_VALUE
 HEIGHT = HIGH_VALUE
 width_set = 640
 height_set = 480
+
 capture = cv2.VideoCapture(4)
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
 capture.set(cv2.CAP_PROP_FRAME_WIDTH, width_set)
