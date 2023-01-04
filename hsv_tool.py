@@ -9,7 +9,7 @@ def nothing(x):
 # Pfad eines Bierflasche-Bildes einfügen. Vor dem Einladen die Größe des Bildes anpassen.
 # Quelle: https://stackoverflow.com/questions/10948589/choosing-the-correct-upper-and-lower-hsv-boundaries-for-color-detection-withcv
 image = cv2.imread(
-    r'/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/pi_cam_pyramide/1PI_CAM.jpg')
+    r'/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/plan_pyramide/P_top_1.jpg')
 image = cv2.resize(image,(480,480))
 
 cv2.namedWindow('image')

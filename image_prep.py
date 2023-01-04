@@ -6,10 +6,10 @@ import time
 ext = 'jpg'
 number_of_images = 5
 comp_list=[]
-size = (200,200)
+size = (400,400)
 histSize = [255,255,255]
 method = cv2.HISTCMP_INTERSECT
-plan = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/webcam_pyramide/1.jpg')
+plan = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/pi_cam_pyramide/1PI_CAM.jpg')
 
 #plan = cv2.resize(plan,size)
 #cv2.imshow("plan",plan)
@@ -37,7 +37,7 @@ for i in range(1,number_of_images+1):
     output_path = '/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/pi_cam_pyramide/cropped'+str(i)+'PI_CAM.'
     org_image	= cv2.imread(path+ext)
     #print('Original Dimensions : ',org_image.shape)
-    #org_image = cv2.resize(org_image,size)
+    org_image = cv2.resize(org_image,size)
     #convert the image in hsv colorspace for masking
     hsv_image = cv2.cvtColor(org_image, cv2.COLOR_BGR2HSV)
     #cv2.imshow("hsv image",hsv_image)
@@ -64,7 +64,7 @@ for i in range(1,number_of_images+1):
     full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_OPEN, kernel_5, iterations=6)
     full_mask = cv2.morphologyEx(full_mask, cv2.MORPH_CLOSE, kernel_5, iterations=6)
 
-    contour =cv2.findContours(full_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0] 
+    contour = cv2.findContours(full_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0] 
 
     #get the first position in the contours array sorted by area (biggest contour)
     largest_contour = sorted(contour, key=cv2.contourArea, reverse=True)[0]
@@ -88,7 +88,7 @@ for i in range(1,number_of_images+1):
 
   
     hist2 = cv2.calcHist([org_image], [0,1,2], None,histSize,[0, 256, 0, 256, 0, 256])
-    hist2[0, 0, 0] = 0
+    #hist2[0, 0, 0] = 0
     hist2 = cv2.normalize(hist2, hist2).flatten()
     #plt.plot(hist2)
     #plt.xlim([0,256])
@@ -109,13 +109,13 @@ for i in range(1,number_of_images+1):
 
     #blur the masked image
     #blur_img = cv2.GaussianBlur(full_mask, (3, 3), 0)
-    # cv2.imshow("blurred hsv image",blur_img)
-    # cv2.imshow("contour",contour_pic)
+    cv2.imshow("blurred hsv image",blur_img)
+    cv2.imshow("contour",contour_pic)
     cv2.imshow("end image",prepared)
-    # cv2.imshow("cropped image",roi)
-    # cv2.imwrite(output_path + ext,roi)
-    # cv2.imwrite(output_path + 'png',transparent)
-    # cv2.waitKey(0)
+    cv2.imshow("cropped image",roi)
+    cv2.imwrite(output_path + ext,roi)
+    cv2.imwrite(output_path + 'png',transparent)
+    cv2.waitKey(0)
     plt.close()
     i+=1
 

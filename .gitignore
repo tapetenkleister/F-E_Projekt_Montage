@@ -131,3 +131,6 @@ dmypy.json
 #data 
 *.jpg
 *.png
+*.csv
+*.odp
+*.ods
