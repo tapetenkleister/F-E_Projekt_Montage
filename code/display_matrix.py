@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 X = Y = 24
 matrix = np.random.randint(0, 4, size=(X, Y))
 rows, cols = matrix.shape
+
+#outline green plate
 matrix[0:2,:] = 4
 matrix[rows-2:rows,:] = 4
 matrix[:,0:2] = 4

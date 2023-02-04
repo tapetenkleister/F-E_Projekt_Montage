@@ -6,7 +6,7 @@ number_of_images = 5
 
 #size = (400,400)
 
-path = 'code/Pyramide_4rot.'
+path = 'code/Pyramide_5.'
 image = cv2.imread(path+ext)
 # Converts the BGR color space of the image to the HSV color space
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)      
