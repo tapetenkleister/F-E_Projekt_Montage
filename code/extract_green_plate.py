@@ -6,7 +6,7 @@ number_of_images = 5
 
 #size = (400,400)
 
-path = 'code/Pyramide_5.'
+path = 'code/Pyramide_4rot.'
 image = cv2.imread(path+ext)
 # Converts the BGR color space of the image to the HSV color space
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)      
@@ -55,6 +55,7 @@ print("bounding box: {}".format(box))
 width = int(rect[1][0])
 height = int(rect[1][1])
 src_pts = box.astype("float32")
+
 # coordinate of the points in box points after the rectangle has been
 # straightened
 dst_pts = np.array([[0, height-1],

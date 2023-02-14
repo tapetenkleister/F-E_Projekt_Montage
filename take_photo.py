@@ -28,4 +28,4 @@ def save_frame_camera_key(device_num, dir_path, basename, ext='jpg', delay=1, wi
     cv2.destroyWindow(window_name)
 
 
-save_frame_camera_key(4, '/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/CreativeSenz3D', 'camera_capture')
+save_frame_camera_key(2, '/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/CreativeSenz3D', 'camera_capture')
