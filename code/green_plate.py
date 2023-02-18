@@ -6,7 +6,7 @@ number_of_images = 5
 
 #size = (400,400)
 
-path = 'code/Pyramide_4rot.'
+path = 'code/Pyramide_3_test.'
 image = cv2.imread(path+ext)
 # Converts the BGR color space of the image to the HSV color space
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)      
@@ -68,26 +68,6 @@ M = cv2.getPerspectiveTransform(src_pts, dst_pts)
 
 # directly warp the rotated rectangle to get the straightened rectangle
 warped = cv2.warpPerspective(image, M, (width, height))
-
-
-# # rotate the image to deskew it
-# (h, w) = image.shape[:2]
-# center = (w // 2, h // 2)
-# M = cv2.getRotationMatrix2D(center, angle, 1.0)
-# rotated = cv2.warpAffine(image, M, (w, h),
-# 	flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-
-
-
-# #Crop the original image to the contour
-# roi = image.copy()[y:y+h, x:x+w]
-
-
-
-
-
-
-
 
 # Show the processing steps of the image
 def showInMovedWindow(winname, img, x, y):
