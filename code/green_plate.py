@@ -48,6 +48,7 @@ bounding_boxes = cv2.rectangle(image.copy(), (x, y), (x + w, y + h), (0, 0, 255)
 # compute rotated rectangle (minimum area)
 rect = cv2.minAreaRect(biggest_contour)
 angle = rect[-1]
+
 print('angle:',angle)
 box = cv2.boxPoints(rect)
 box = np.int0(box)

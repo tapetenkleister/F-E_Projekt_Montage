@@ -147,7 +147,7 @@ print()
 
 
 #setting the exposure time 0-40ms at 25fps which is standard
-new_exposure = ueye.c_double(20)
+new_exposure = ueye.c_double(15)
 nRet = ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_SET_EXPOSURE, new_exposure, 8)
 if nRet != ueye.IS_SUCCESS:
     print("is_SetExposure ERROR")
@@ -206,7 +206,7 @@ frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
 
 #...and finally display it
 cv2.imshow("SimpleLive_Python_uEye_OpenCV", frame)
-
+#cv2.imwrite("Testfoto.jpg",frame)
 # Press q if you want to end the loop
 cv2.waitKey(0) 
     

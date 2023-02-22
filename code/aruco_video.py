@@ -8,7 +8,7 @@ import sys
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-t", "--type", type=str,
-                default="DICT_ARUCO_ORIGINAL",
+                default="DICT_4X4_1000",
                 help="type of ArUCo tag to detect")
 args = vars(ap.parse_args())
 # define names of each possible ArUco tag OpenCV supports
