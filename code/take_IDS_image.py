@@ -39,6 +39,7 @@ from pyueye import ueye
 import numpy as np
 import cv2
 import sys
+from datetime import datetime
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -54,6 +55,7 @@ nBitsPerPixel = ueye.INT(24)    #24: bits per pixel for color mode; take 8 bits 
 channels = 3                    #3: channels for color mode(RGB); take 1 channel for monochrome
 m_nColorMode = ueye.INT(1)		# Y8/RGB16/RGB24/REG32
 bytes_per_pixel = int(nBitsPerPixel / 8)
+exposure_time = 26
 #---------------------------------------------------------------------------------------------------------------------------------------
 print("START")
 print()
@@ -147,7 +149,7 @@ print()
 
 
 #setting the exposure time 0-40ms at 25fps which is standard
-new_exposure = ueye.c_double(15)
+new_exposure = ueye.c_double(exposure_time)
 nRet = ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_SET_EXPOSURE, new_exposure, 8)
 if nRet != ueye.IS_SUCCESS:
     print("is_SetExposure ERROR")
@@ -195,7 +197,15 @@ qbytes_per_pixel = int(nBitsPerPixel / 8)
 
 # ...reshape it in an numpy array...
 frame = np.reshape(array,(height.value, width.value, bytes_per_pixel))
-cv2.imwrite('exampleIDS.jpg', frame)
+# Create file name for our picture
+
+currentTime = datetime.now()
+picTime = currentTime.strftime("%Y%m%d_%H%M%S")
+picName = picTime + '.jpg'
+
+
+cv2.imwrite(picName, frame)
+
 # ...resize the image by a half
 frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
 

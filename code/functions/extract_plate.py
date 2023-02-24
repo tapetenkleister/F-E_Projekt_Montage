@@ -20,10 +20,17 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     """
     arucoDict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_1000)
     arucoParams = cv2.aruco.DetectorParameters()
+    # Parameter for higher MegaPixel Images https://docs.opencv.org/4.x/d1/dcb/tutorial_aruco_faq.html, 
+    # https://github.com/opencv/opencv_contrib/issues/2811
+
+    arucoParams.adaptiveThreshWinSizeMin = 3  # default 3
+    arucoParams.adaptiveThreshWinSizeMax = 23  # default 23
+    arucoParams.adaptiveThreshWinSizeStep = 10  # default 10
+    arucoParams.adaptiveThreshConstant = 7      # default 7
+    arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-    # read the picture and keep original size saved
-    org = image.copy()  
+   
     h, w, c = image.shape
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
     frame = image.copy()
@@ -33,7 +40,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     (corners, ids, rejected) = detector.detectMarkers(frame)
     centers = []
 
-    # verify *at least* one ArUco marker was detected
+    # verify exactly 4 ArUco marker were detected
     if len(corners) ==4:
         # flatten the ArUco IDs list
         ids = ids.flatten()
@@ -67,7 +74,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5, (0, 255, 0), 2)
     else:
-        print('Error: Too many or too less markers detected!')
+        print(f'Error: {len(corners)} detected!')
     # show the output frame
     detected_markers = frame.copy()
 

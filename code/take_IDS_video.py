@@ -180,7 +180,7 @@ while(nRet == ueye.IS_SUCCESS):
     frame = np.reshape(array,(height.value, width.value, bytes_per_pixel))
 
     # ...resize the image by a half
-    frame = cv2.resize(frame,(0,0),fx=0.5, fy=0.5)
+    frame = cv2.resize(frame,(0,0),fx=1, fy=1)
     
 #---------------------------------------------------------------------------------------------------------------------------------------
     #Include image data processing here

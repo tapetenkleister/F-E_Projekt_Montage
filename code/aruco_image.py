@@ -44,22 +44,35 @@ if ARUCO_DICT.get(args["type"], None) is None:
 # load the ArUCo dictionary and grab the ArUCo parameters
 print("[INFO] detecting '{}' tags...".format(args["type"]))
 arucoDict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT[args["type"]])
+
 arucoParams = cv2.aruco.DetectorParameters()
+
+# Parameter for higher MegaPixel Images https://docs.opencv.org/4.x/d1/dcb/tutorial_aruco_faq.html, 
+# https://github.com/opencv/opencv_contrib/issues/2811
+
+arucoParams.adaptiveThreshWinSizeMin = 3  # default 3
+arucoParams.adaptiveThreshWinSizeMax = 23  # default 23
+arucoParams.adaptiveThreshWinSizeStep = 10  # default 10
+arucoParams.adaptiveThreshConstant = 7      # default 7
+arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
 detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
 #read the picture
-frame = cv2.imread('IMG_20230222_172321.jpg')
+frame = cv2.imread('20230223_124959.jpg')
 h, w, c = frame.shape
 # scale for intermediate result
-scale = 0.6
+scale = 1
+
 
 frame = imutils.resize(frame, width=int(w*scale), height=int(h*scale))
 # detect ArUco markers in the input frame
 (corners, ids, rejected) = detector.detectMarkers(frame)
 centers = []
+print(len(corners))
+print(rejected)
 
 # verify *at least* one ArUco marker was detected
-if len(corners) ==4:
+if len(corners) == 4:
     # flatten the ArUco IDs list
     ids = ids.flatten()
     # loop over the detected ArUCo corners
@@ -95,7 +108,10 @@ else:
     print('Error: Too many or too less markers detected!')
 # show the output frame
 
-cv2.imshow("Frame", frame)
+
+output = frame.copy()
+output = imutils.resize(output, width=int(w*0.5), height=int(h*0.5))
+cv2.imshow("Frame", output)
 key = cv2.waitKey(0)
 
 #sort centers by id: from 1 to 4 starting at top left going counterclockwise
