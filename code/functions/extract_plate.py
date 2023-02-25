@@ -2,6 +2,7 @@
 import imutils
 import cv2
 import numpy as np
+from find_closest_corner import find_closest_corner
 from showInMovedWindow import showInMovedWindow
 def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     """This functions returns a perspectively warped image consisting of a plane which is outlined by 4 aruco markers.
@@ -32,13 +33,15 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
 
    
     h, w, c = image.shape
+    center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
     frame = image.copy()
     clean_frame = image.copy()
 
     # detect ArUco markers in the input frame
     (corners, ids, rejected) = detector.detectMarkers(frame)
-    centers = []
+    
+    inner_corners=[]
 
     # verify exactly 4 ArUco marker were detected
     if len(corners) ==4:
@@ -50,7 +53,11 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
             # in top-left, top-right, bottom-right, and bottom-left
             # order)
             corners = markerCorner.reshape((4, 2))
-            
+
+             #compute inner corner
+            inner_corner = find_closest_corner(center, corners)
+            inner_corners.append([inner_corner[0],inner_corner[1],markerID])
+
             (topLeft, topRight, bottomRight, bottomLeft) = corners
             # convert each of the (x, y)-coordinate pairs to integers
             topRight = (int(topRight[0]), int(topRight[1]))
@@ -67,7 +74,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
             cX = int((topLeft[0] + bottomRight[0]) / 2.0)
             cY = int((topLeft[1] + bottomRight[1]) / 2.0)
             cv2.circle(frame, (cX, cY), 2, (0, 0, 255), -1)
-            centers.append([cX, cY, markerID])
+            
             # draw the ArUco marker ID on the frame in the top left corner
             cv2.putText(frame, str(markerID),
                         (topLeft[0], topLeft[1] - 5),
@@ -81,17 +88,17 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     
 
     #sort centers by id: from 1 to 4 starting at top left going counterclockwise
-    centers = sorted(centers, key=lambda x: x[2])
+    inner_corners = sorted(inner_corners, key=lambda x: x[2])
     if debug:
-        print('Aruco center position and ID:',centers)
+        print('Aruco inner corner position and ID:',inner_corners)
     #remove the ids from the coordinates (just keep the first to elements)
-    centers = [x[:2] for x in centers]
+    inner_corners = [x[:2] for x in inner_corners]
    
     #input for the getPerspectiveTransform function
-    src_pts = np.float32(centers)
+    src_pts = np.float32(inner_corners)
 
     # compute the width of the new image
-    (tl, bl, br, tr) = centers
+    (tl, bl, br, tr) = inner_corners
     bottomWidth = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
     topWidth = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
     # compute the width of the new image
