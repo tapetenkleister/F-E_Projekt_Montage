@@ -172,8 +172,6 @@ M = cv2.getPerspectiveTransform(src_pts, dst_pts)
 warp = cv2.warpPerspective(frame, M, (maxWidth, maxHeight))
 
 cv2.imshow("warped_scaled down", warp)
-
-
 key = cv2.waitKey(0)
 
 cv2.destroyAllWindows()

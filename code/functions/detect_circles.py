@@ -22,10 +22,11 @@ def detect_circles(image:np.ndarray, type_of_image:str, debug:bool=False):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # create a CLAHE object (Arguments are optional).
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(12,12))
     clahe = clahe.apply(gray)
     if type_of_image == 'photo':
         #parameterset for detection of circles in photo
+        #implies that there are 20x20 circles present
         param1 = 50 #500
         param2 = 16 #200 #smaller value-> more false circles
         minRadius = 8
@@ -35,7 +36,7 @@ def detect_circles(image:np.ndarray, type_of_image:str, debug:bool=False):
         #parameters for finding circles in plan
         param1 = 50 #500
         param2 = 10 #200 #smaller value-> more false circles
-        minRadius = 22
+        minRadius = 5
         minDist = 3*minRadius #mimimal distance from center to center
         maxRadius = 29 #10
     else: 
