@@ -309,33 +309,49 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
 def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
     rest_x = 0
     rest_y = 0
+
+    gab_x= 0
+    gab_y= 0
     if (len(template_posotion_matrix)%2) == 0:
-        y1 = template_posotion_matrix[0][0][1]
-        y2 = template_posotion_matrix[-1][0][1]    
+        y1 = image_position_matrix[0][0][1]
+        y2 = image_position_matrix[-1][0][1]    
         len_y = len(image_position_matrix)-1
-        #print(y1, y2, len_y)
-        gab = (y2 - y1)//len_y
-        rest_y = 0.5 * gab
+        print("y1, y2, len_y",  y1, y2, len_y)
+        gab_y = (y2 - y1)//len_y
+        rest_y = 0.5 * gab_y
 
     if len(template_posotion_matrix[0])%2 == 0:
-        x1 = template_posotion_matrix[0][0][0]
-        x2 = template_posotion_matrix[0][-1][0]    
+        x1 = image_position_matrix[0][0][0]
+        x2 = image_position_matrix[0][-1][0]    
         len_x = len(image_position_matrix[0])-1
-        gab = (x2 - x1)//len_x
-        rest_x = 0.5 * gab
+        print("x1, x2, len_y",  x1, x2, len_x)
+        gab_x = (x2 - x1)//len_x
+        rest_x = 0.5 * gab_x
 
     position = image_position_matrix[index_x][index_y]
     x = int(round(position[0])+rest_x)
     y = int(round(position[1])+rest_y)
+    print("x, y:", x,   y)
 
-    start_point_y = int(x - ((x2-x1)/4))
-    start_point_x = int(y - ((y2-y1)/4))
+    template_legnth_y = gab_y * int(round(0.5*len(template_posotion_matrix)))
+    template_legnth_x = gab_x * int(round(0.5*len(template_posotion_matrix[0])))
+    print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
 
-    end_point_x = int(x + ((x2-x1)/4))
-    end_point_y = int(y + ((y2-y1)/4))
+    # start_point_y = int(x - ((x2-x1)/4))
+    # start_point_x = int(y - ((y2-y1)/4))
 
+    # end_point_x = int(x + ((x2-x1)/4))
+    # end_point_y = int(y + ((y2-y1)/4))
+
+    start_point_y = int(y -  template_legnth_y)
+    start_point_x = int(x -   template_legnth_x)
+    print("start_point_y,start_point_x", start_point_y,start_point_x)
+
+    end_point_x = int(x +  template_legnth_y)
+    end_point_y = int(y +   template_legnth_x)
+    print("end_point_y,end_point_x", end_point_y,end_point_x)
     highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 0, 0), 10)
-
+    highlighted_image = cv2.circle(image, (x,y), 5, 0, 10)
     return highlighted_image
 
     
