@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-img = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/plan_bridge/bridge1_1.png')
+img = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/ids_pyramide/pyramide1.jpg')
 h = img.shape[0]
 w = img.shape[1]
 longest_side_res = max(h,w)

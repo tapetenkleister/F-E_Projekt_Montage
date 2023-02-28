@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from showInMovedWindow import showInMovedWindow
 
-def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longest_side:int, debug:bool=False):
+def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longest_side:int=10, debug:bool=False):
     """Detects circles of the lego bricks or plate and returns a list with their positions and the image .
         Depending of the type of image (photo or plan) the circles are detected. In case of a cropped plan image, the
         number of circles on the longest side need to be known. The bigger the value, the smaller the circles that can be detected.
@@ -33,6 +33,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
     # create a CLAHE object (Arguments are optional).
     clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(12,12))
     clahe = clahe.apply(gray)
+    
     if real_photo:
         #parameterset for detection of circles in photo
         #implies that there are 20x20 circles present

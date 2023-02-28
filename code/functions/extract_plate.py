@@ -32,7 +32,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
    
-    h, w, c = image.shape
+    h, w, _ = image.shape
     center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
     frame = image.copy()

@@ -6,7 +6,7 @@ from detect_circles import detect_circles
 import json
 import os
 from pathlib import Path
-from extract_green_plate import extract_green_plate
+from old.extract_green_plate import extract_green_plate
 
 def get_space(row):
     distances = []
