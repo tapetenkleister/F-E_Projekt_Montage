@@ -15,7 +15,7 @@ def display_lego_pattern(matrix:np.ndarray)->None:
     
     # color_map = {0: [0, 200, 0], 1: [255, 255, 0],
     #             2: [0, 0, 255], 3: [255, 0, 0],4: [0, 90, 0]}
-    color_map = {'lime': [0, 200, 0], 'yellow': [255, 255, 0],
+    color_map = {'green': [0, 200, 0], 'yellow': [255, 255, 0],'white': [255, 255, 255],
                  'blue': [0, 0, 255], 'red': [255, 0, 0],'black': [0, 0, 0]}
 
 

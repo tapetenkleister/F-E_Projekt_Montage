@@ -7,9 +7,6 @@ w = img.shape[1]
 longest_side_res = max(h,w)
 
 expected_circles_per_longest_side = 24
-# define the contrast and brightness value
-contrast = 3. # Contrast control ( 0 to 127)
-brightness = -60. # Brightness control (0-100)
 
 # call addWeighted function. use beta = 0 to effectively only operate on one image
 #adjusted = cv2.addWeighted( img, contrast, img, 0, brightness)

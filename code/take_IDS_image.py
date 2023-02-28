@@ -55,7 +55,7 @@ nBitsPerPixel = ueye.INT(24)    #24: bits per pixel for color mode; take 8 bits 
 channels = 3                    #3: channels for color mode(RGB); take 1 channel for monochrome
 m_nColorMode = ueye.INT(1)		# Y8/RGB16/RGB24/REG32
 bytes_per_pixel = int(nBitsPerPixel / 8)
-exposure_time = 26
+exposure_time = 40
 #---------------------------------------------------------------------------------------------------------------------------------------
 print("START")
 print()

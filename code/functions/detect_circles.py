@@ -33,7 +33,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
     # create a CLAHE object (Arguments are optional).
     clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(12,12))
     clahe = clahe.apply(gray)
-    
+
     if real_photo:
         #parameterset for detection of circles in photo
         #implies that there are 20x20 circles present
@@ -68,8 +68,12 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
             
     else:
         print('No circles found')
-
-    print('Full real plate has 572 circles. (24x24 - 4 edge circles)')
+    if len(circles[0]) < 350:
+            print('--------------------------------------------------------')
+            print('Too less circles found! Probably the image is too dark.')
+            print('--------------------------------------------------------')
+            
+   #print('Full real plate has 572 circles. (24x24 - 4 edge circles)')
     print('circles found:',len(circles[0]))
 
     # Show result for testing:
