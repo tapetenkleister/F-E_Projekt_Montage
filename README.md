@@ -16,8 +16,7 @@ Projekt Repo for automatic detection of montage steps for simple lego structures
   
 4. Scroll to Section "Using the "run" script" and proceede the steps.
    You probably need to start the ueyesetup as sudo. Make sure, that all dependencies on the manual in Step 3 are fullfilled.
-   Check vie "dpkg --list" if you have the packages "ueye-api" and "ueye-common" installed.
   
 5. pip install pyueye
 
-6. Test the camera with the now installe IDS Cameramanager or e.g. with the example script "SimpleLive_PyuEye_OpenCV.py"
+6. Test the camera with the now installed IDS Cameramanager or e.g. with the example script "SimpleLive_PyuEye_OpenCV.py"
