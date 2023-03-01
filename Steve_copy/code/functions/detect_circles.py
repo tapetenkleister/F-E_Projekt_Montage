@@ -1,22 +1,18 @@
-    
 import numpy as np
 import cv2
 from showInMovedWindow import showInMovedWindow
 
-def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longest_side:int, debug:bool=False):
+def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longest_side:int=10, debug:bool=False):
     """Detects circles of the lego bricks or plate and returns a list with their positions and the image .
         Depending of the type of image (photo or plan) the circles are detected. In case of a cropped plan image, the
         number of circles on the longest side need to be known. The bigger the value, the smaller the circles that can be detected.
-
     Args:
         image (np.array): Image to detect the circles in
         real_photo (bool): Photo by IDS camera(True) or Cropped plan (False)
         expected_circles_per_longest_side(int): How many circles are on the longest side of the plan image.(only necessary for plan images)
         debug (bool, optional): Debug option. Defaults to False.
-
     Raises:
         NameError: Error if type argument was given wrong
-
     Returns:
         circle_list:list : List of all circles found with x and y position
         result:np.array : Image with drawn circles
@@ -33,11 +29,12 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
     # create a CLAHE object (Arguments are optional).
     clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(12,12))
     clahe = clahe.apply(gray)
+
     if real_photo:
         #parameterset for detection of circles in photo
         #implies that there are 20x20 circles present
         param1 = 50 #500
-        param2 = 16 #200 #smaller value-> more false circles
+        param2 = 15 #200 #smaller value-> more false circles
         minRadius = 8
         minDist = 4*minRadius #mimimal distance from center to center
         maxRadius = 16 #10
@@ -67,8 +64,12 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
             
     else:
         print('No circles found')
-
-    print('Full real plate has 572 circles. (24x24 - 4 edge circles)')
+    if len(circles[0]) < 350 and real_photo == True:
+            print('--------------------------------------------------------')
+            print('Too less circles found! Probably the image is too dark.')
+            print('--------------------------------------------------------')
+            
+   #print('Full real plate has 572 circles. (24x24 - 4 edge circles)')
     print('circles found:',len(circles[0]))
 
     # Show result for testing:

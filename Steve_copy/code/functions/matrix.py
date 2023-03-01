@@ -9,6 +9,7 @@ from pathlib import Path
 from extract_green_plate import extract_green_plate
 from extract_plate import extract_plate
 from display_lego_pattern import display_lego_pattern
+from get_color import get_color_of_roi
 
 def get_space(row:list):
     distances = []
@@ -20,8 +21,10 @@ def get_space(row:list):
     min(distances)
     return distance
 
-def check_row(row, space, max_len, x_min):
-    
+def check_row(row, space, max_len, x_min, x_max):
+    index_list=[]
+    space_list=[]
+    point_list=[]
     for i in range(len(row)):
         if i ==0:
             if row[i][0] > x_min*1.5:
@@ -37,24 +40,62 @@ def check_row(row, space, max_len, x_min):
                 else:
                     continue
 
-        if i == (len(row)-1) and len(row)!=max_len:
-            #print("insert at ", i, " position")
+        if row[i+1][0]-row[i][0] > (space*1.2) and row[i+1][0]-row[i][0] < (space*1.4):
+            #print("insert at",  i, " position")
             new_point = [(row[i][0]+space)*1.05, row[i][1]]
-            row.insert(i+1, new_point)
+            point_list.append(new_point)
+            index_list.append(i)
+            space_list.append(row[i+1][0]-row[i][0])
             if len(row) == max_len:
                     break
             else:
                 continue
-        
+
         if row[i+1][0]-row[i][0] > (space*1.4):
             #print("insert at",  i, " position")
-            new_point = [(row[i][0]+space)*1.05, row[i][1]]
+            new_point = [(row[i][0]+space), row[i][1]]
             row.insert(i, new_point)
             if len(row) == max_len:
                     break
             else:
                 continue
+        
+
+        if i == (len(row)-1) and len(row)!=max_len:
+            #print("insert at ", i, " position")
+            x_point = row[i][0]
+            if abs(x_max - x_point) > space*0.5:
+                new_point = [(x_max), row[i][1]]
+                row.insert(i+1, new_point)
+            if len(row) == max_len:
+                    break
+            else:
+                control_rows(row, point_list, space_list, max_len)
+    new_row = Sort_x(row)
     return row
+
+def control_rows(row, point_list, space_list, max_len):
+    num_missing_circles = max_len - len(row)
+    if num_missing_circles !=0:
+        if num_missing_circles == len(point_list):
+            for point in range(len(point_list)):
+                new_point = point_list[point]
+                row.append(new_point)
+        else: 
+            for point in range(len(point_list)):
+                max_space = max(row)
+                index_max_space = row.index(max_space)
+                row.append(point_list[index_max_space])
+                del point_list[index_max_space]
+                del space_list[index_max_space]
+
+                if len(row)==max_len:
+                    break
+                else:
+                    continue
+            
+
+
 
 def Sort_y(sub_li):
     l = len(sub_li)
@@ -146,6 +187,12 @@ def get_matrix(image, circles, matrix_Type):
         for point in row:
             if point[0] < x_min:
                 x_min = point[0]
+    x_max = 0
+    for row in grids:
+        for point in row:
+            if point[0] > x_max:
+                x_min = point[0]
+
     index = 0
     for row in grids:
         space = get_space(row)
@@ -154,7 +201,7 @@ def get_matrix(image, circles, matrix_Type):
             #print("start cutting")
             print("row:", index)
             print("old_row:", row)
-            row = check_row(row, space, max_len, x_min)
+            row = check_row(row, space, max_len, x_min, x_max)
             print("new_len ", len(row))
             print("new_row:", row)
         index += 1
@@ -178,8 +225,9 @@ def get_matrix(image, circles, matrix_Type):
         print("index", index) 
         color_name_row = []
         print("im_shape:", len(im), len(im[0]))
-        for point in row:        
-            color = get_avarege_color(point, im)        
+        for point in row:      
+            color = get_avarege_color(point, im)  
+            #color = get_color_of_roi(point, im)        
             color_name_row.append(color)        
         color_name_grid.append(color_name_row)
         index += 1
