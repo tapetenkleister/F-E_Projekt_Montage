@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path
 from extract_green_plate import extract_green_plate
+from extract_plate import extract_plate
+from display_lego_pattern import display_lego_pattern
 
-def get_space(row):
+def get_space(row:list):
     distances = []
     for i in range(len(row)):
         if i == (len(row)-1):
@@ -18,14 +20,40 @@ def get_space(row):
     min(distances)
     return distance
 
-def check_row(row, space):
+def check_row(row, space, max_len, x_min):
+    
     for i in range(len(row)):
-        if i == (len(row)-1):
-            break
-        
-        if row[i+1][0]-row[i][0] > (space*1.7):
+        if i ==0:
+            if row[i][0] > x_min*1.5:
+                #print("insert at i=0")
+                
+                new_point = [(row[i][0]-space), row[i][1]]
+                new_row = [new_point]
+                new_row.append(row)
+                row = new_row
+                #row.insert(i, new_point)
+                if len(row) == max_len:
+                    break
+                else:
+                    continue
+
+        if i == (len(row)-1) and len(row)!=max_len:
+            #print("insert at ", i, " position")
             new_point = [(row[i][0]+space)*1.05, row[i][1]]
             row.insert(i+1, new_point)
+            if len(row) == max_len:
+                    break
+            else:
+                continue
+        
+        if row[i+1][0]-row[i][0] > (space*1.4):
+            #print("insert at",  i, " position")
+            new_point = [(row[i][0]+space)*1.05, row[i][1]]
+            row.insert(i, new_point)
+            if len(row) == max_len:
+                    break
+            else:
+                continue
     return row
 
 def Sort_y(sub_li):
@@ -71,9 +99,11 @@ def get_avarege_color(point, im):
     
     colors = []
     colors_name =[]
-    list_of_colors = [[0,0,255],[0,0,0],[255,255,255],[0,255,0],[255,0,0],[255,255,0]]
-    for i in range(5):
-        for z in range(5):
+    list_of_colors = [[0,0,255],[0,255,0],[255,0,0],[255,255,0]]
+    
+    #print("point", point)
+    for i in range(2):
+        for z in range(2):
             color = im[round(point[1]+i), round(point[0]+z)]
             colors.append(color)
             color = im[round(point[1]-i), round(point[0]-z)]
@@ -108,15 +138,32 @@ def get_matrix(image, circles, matrix_Type):
     for row in grids:
         row = Sort_x(row)
 
+    list_len = [len(row) for row in grids]
+    max_len =max(list_len)
+    x_min = 1000000000000
+
+    for row in grids:
+        for point in row:
+            if point[0] < x_min:
+                x_min = point[0]
+    index = 0
     for row in grids:
         space = get_space(row)
-        row = check_row(row, space)
+        #print("len_row", len(row))
+        if len(row)<max_len:
+            #print("start cutting")
+            print("row:", index)
+            print("old_row:", row)
+            row = check_row(row, space, max_len, x_min)
+            print("new_len ", len(row))
+            print("new_row:", row)
+        index += 1
     fixed_grids = grids
-    if matrix_Type =="image":
-        cutted_grids  = cut_matrix(fixed_grids)
-    else:
-        cutted_grids = fixed_grids
-
+    cutted_grids = fixed_grids
+    # if matrix_Type =="image":
+    #     cutted_grids  = cut_matrix(fixed_grids)
+    # else:
+    #     cutted_grids = fixed_grids
     im = cv2.cvtColor(image ,cv2.COLOR_BGR2RGB)
     if matrix_Type == "image":
         alpha = 1 # Contrast control
@@ -126,19 +173,23 @@ def get_matrix(image, circles, matrix_Type):
 
     color_name_grid = []
 
-
-    for row in cutted_grids:    
+    index = 0
+    for row in grids: #cutted_grids  
+        print("index", index) 
         color_name_row = []
+        print("im_shape:", len(im), len(im[0]))
         for point in row:        
             color = get_avarege_color(point, im)        
             color_name_row.append(color)        
         color_name_grid.append(color_name_row)
+        index += 1
 
+    display_lego_pattern(color_name_grid)
     return color_name_grid, cutted_grids
 
 
 def get_similarity(picture_grid, plan_grid):
-
+    #print("picture_grid",picture_grid)
     row_pic= len(picture_grid)
     column_pic = len(picture_grid[0])
 
@@ -212,7 +263,7 @@ def index_2d(list, value):
             return (i, x.index(value))
 
 
-def safe_new_matrix(template_name, dir_list,  id_list):
+def safe_new_matrix(template_name, dir_list,  id_list, longest_side):
     plan_index = 0
     json_data = []
     new_path = "..\..\Templates\\" + template_name
@@ -225,7 +276,7 @@ def safe_new_matrix(template_name, dir_list,  id_list):
     
     for dir in dir_list:
         image = cv2.imread(dir)
-        circles_template, template_image = detect_circles(image,type_of_image='plan',debug=False)
+        circles_template, template_image = detect_circles(image,real_photo=False,expected_circles_per_longest_side=longest_side, debug=False)
         matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template, "plan")
         position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
         
@@ -275,10 +326,10 @@ def open_saved_matrix():
 
 def detect_matching_template(image, template_matrix_list, template_name_list):
     rotated_image = extract_green_plate(image, correct_rotation=True, debug=False)
-    circles_im,rot_image = detect_circles(rotated_image,type_of_image='photo',debug=False)
+    circles_im,rot_image = detect_circles(rotated_image,real_photo=True,expected_circles_per_longest_side=10,debug=False)
     im_image = cv2.cvtColor(rotated_image,cv2.COLOR_BGR2RGB)
     matrix_image, matrix_image_position= get_matrix(im_image, circles_im, "image")
-
+    
     current_max_similarity = 0
     current_max_index_x = 0 
     current_max_index_y = 0
@@ -307,6 +358,7 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     return rotated_image, template_name,  matrix_image_position, template_position_matrix, current_max_index_x, current_max_index_y, current_max_similarity
 
 def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
+    
     rest_x = 0
     rest_y = 0
 
@@ -336,12 +388,6 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     template_legnth_y = gab_y * int(round(0.5*len(template_posotion_matrix)))
     template_legnth_x = gab_x * int(round(0.5*len(template_posotion_matrix[0])))
     print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
-
-    # start_point_y = int(x - ((x2-x1)/4))
-    # start_point_x = int(y - ((y2-y1)/4))
-
-    # end_point_x = int(x + ((x2-x1)/4))
-    # end_point_y = int(y + ((y2-y1)/4))
 
     start_point_y = int(y -  template_legnth_y)
     start_point_x = int(x -   template_legnth_x)
