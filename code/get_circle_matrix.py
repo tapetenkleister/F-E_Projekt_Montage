@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-img = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/ids_pyramide/pyramide1.jpg')
+img = cv2.imread('/home/steve/Vorlesungen/FE_Projekt/F-E_Projekt_Montage/photos/ids_bridge/crop_bridge3.jpg')
 h = img.shape[0]
 w = img.shape[1]
 longest_side_res = max(h,w)
@@ -52,6 +52,7 @@ if circles is not None:
     for i in circles[0,:]:
         #x-position, y-position, radius
         cv2.circle(result, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        cv2.circle(result, (i[0], i[1]), 15, (0, 255, 0), 1)
         #print(i)
 print('Full plate has 572 (576 lego standard) circles.')
 print('circles found:',len(circles[0]))

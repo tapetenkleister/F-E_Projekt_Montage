@@ -38,7 +38,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
         #parameterset for detection of circles in photo
         #implies that there are 20x20 circles present
         param1 = 50 #500
-        param2 = 16 #200 #smaller value-> more false circles
+        param2 = 15 #200 #smaller value-> more false circles
         minRadius = 8
         minDist = 4*minRadius #mimimal distance from center to center
         maxRadius = 16 #10
@@ -68,7 +68,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
             
     else:
         print('No circles found')
-    if len(circles[0]) < 350:
+    if len(circles[0]) < 350 and real_photo == True:
             print('--------------------------------------------------------')
             print('Too less circles found! Probably the image is too dark.')
             print('--------------------------------------------------------')
