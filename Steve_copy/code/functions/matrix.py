@@ -22,10 +22,13 @@ def get_space(row:list):
     return distance
 
 def check_row(row, space, max_len, x_min, x_max):
-    index_list=[]
     space_list=[]
     point_list=[]
+    skip = False
     for i in range(len(row)):
+        # if skip == True:
+        #     skip = False
+        #     continue
         if i ==0:
             if row[i][0] > x_min*1.5:
                 #print("insert at i=0")
@@ -40,11 +43,22 @@ def check_row(row, space, max_len, x_min, x_max):
                 else:
                     continue
 
+        if i == (len(row)-1) and len(row)!=max_len:
+            #print("insert at last position", row[i][0])
+            x_point = row[i][0]
+            if abs(x_max - x_point) > space*0.5:
+                new_point = [(x_max), row[i][1]]
+                row.insert(i+1, new_point)
+                
+            if len(row) == max_len:
+                    break
+            else:
+                control_rows(row, point_list, space_list, max_len)
+
         if row[i+1][0]-row[i][0] > (space*1.2) and row[i+1][0]-row[i][0] < (space*1.4):
-            #print("insert at",  i, " position")
-            new_point = [(row[i][0]+space)*1.05, row[i][1]]
+            #print("add insecure oint at",  i, " position", row[i][0])
+            new_point = [(row[i][0]+space), row[i][1]]
             point_list.append(new_point)
-            index_list.append(i)
             space_list.append(row[i+1][0]-row[i][0])
             if len(row) == max_len:
                     break
@@ -52,29 +66,23 @@ def check_row(row, space, max_len, x_min, x_max):
                 continue
 
         if row[i+1][0]-row[i][0] > (space*1.4):
-            #print("insert at",  i, " position")
+            
+            #print("insert at",  i, " position", row[i][0])
             new_point = [(row[i][0]+space), row[i][1]]
-            row.insert(i, new_point)
+            row.insert(i+1, new_point)
+            skip = True
             if len(row) == max_len:
                     break
             else:
                 continue
         
 
-        if i == (len(row)-1) and len(row)!=max_len:
-            #print("insert at ", i, " position")
-            x_point = row[i][0]
-            if abs(x_max - x_point) > space*0.5:
-                new_point = [(x_max), row[i][1]]
-                row.insert(i+1, new_point)
-            if len(row) == max_len:
-                    break
-            else:
-                control_rows(row, point_list, space_list, max_len)
+        
     new_row = Sort_x(row)
     return row
 
 def control_rows(row, point_list, space_list, max_len):
+    #print("point_list" ,point_list)
     num_missing_circles = max_len - len(row)
     if num_missing_circles !=0:
         if num_missing_circles == len(point_list):
@@ -199,11 +207,11 @@ def get_matrix(image, circles, matrix_Type):
         #print("len_row", len(row))
         if len(row)<max_len:
             #print("start cutting")
-            print("row:", index)
-            print("old_row:", row)
+            #print("row:", index)
+            #print("old_row:", row)
             row = check_row(row, space, max_len, x_min, x_max)
-            print("new_len ", len(row))
-            print("new_row:", row)
+            #print("new_len ", len(row))
+            #print("new_row:", row)
         index += 1
     fixed_grids = grids
     cutted_grids = fixed_grids
@@ -219,20 +227,27 @@ def get_matrix(image, circles, matrix_Type):
         
 
     color_name_grid = []
-
+    i = 0
+    for row in grids:
+        print("line: ", i)
+        print("len grid_row:", len(row))
+        print(row)
+        i += 1
     index = 0
     for row in grids: #cutted_grids  
-        print("index", index) 
+       # print("index", index) 
         color_name_row = []
-        print("im_shape:", len(im), len(im[0]))
+       # print("im_shape:", len(im), len(im[0]))
         for point in row:      
             color = get_avarege_color(point, im)  
             #color = get_color_of_roi(point, im)        
             color_name_row.append(color)        
         color_name_grid.append(color_name_row)
         index += 1
-
-    display_lego_pattern(color_name_grid)
+    #print("color_name_grid", color_name_grid)
+    for row in color_name_grid:
+        print("len color row:", len(row))
+    #display_lego_pattern(color_name_grid)
     return color_name_grid, cutted_grids
 
 
