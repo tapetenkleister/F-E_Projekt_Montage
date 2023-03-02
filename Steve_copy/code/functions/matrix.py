@@ -280,8 +280,8 @@ def get_matrix(image, circles, matrix_Type):
         color_name_row = []
        # print("im_shape:", len(im), len(im[0]))
         for point in row:      
-            color = get_avarege_color(point, im)  
-            #color = get_color_of_roi(point, im)        
+            #color = get_avarege_color(point, im)  
+            color = get_color_of_roi(point, im)        
             color_name_row.append(color)        
         color_name_grid.append(color_name_row)
         index += 1
@@ -431,8 +431,8 @@ def open_saved_matrix():
 def detect_matching_template(image, template_matrix_list, template_name_list):
     rotated_image = extract_green_plate(image, correct_rotation=True, debug=False)
     circles_im,rot_image = detect_circles(rotated_image,real_photo=True,expected_circles_per_longest_side=10,debug=False)
-    im_image = cv2.cvtColor(rotated_image,cv2.COLOR_BGR2RGB)
-    matrix_image, matrix_image_position= get_matrix(im_image, circles_im, "image")
+    #im_image = cv2.cvtColor(rotated_image,cv2.COLOR_BGR2RGB)
+    matrix_image, matrix_image_position= get_matrix(rotated_image, circles_im, "image")
     
     current_max_similarity = 0
     current_max_index_x = 0 
@@ -463,7 +463,7 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     return rotated_image, template_name,  matrix_image_position, template_position_matrix, current_max_index_x, current_max_index_y, current_max_similarity
 
 def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
-    
+    print("template_posotion_matrix", len(template_posotion_matrix), len(template_posotion_matrix[0]))
     rest_x = 0
     rest_y = 0
 
@@ -484,7 +484,7 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
         print("x1, x2, len_y",  x1, x2, len_x)
         gab_x = (x2 - x1)//len_x
         rest_x = 0.5 * gab_x
-
+    print("index x, y", index_x, index_y)
     position = image_position_matrix[index_x][index_y]
     x = int(round(position[0])+rest_x)
     y = int(round(position[1])+rest_y)
