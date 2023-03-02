@@ -22,10 +22,13 @@ def get_space(row:list):
     return distance
 
 def check_row(row, space, max_len, x_min, x_max):
+    print("----------------------------------------------- new row ---------------------------------------")
+    #print(row)
     space_list=[]
     point_list=[]
     skip = False
     for i in range(len(row)):
+        #print("curr len row:", len(row))
         # if skip == True:
         #     skip = False
         #     continue
@@ -39,6 +42,7 @@ def check_row(row, space, max_len, x_min, x_max):
                 row = new_row
                 #row.insert(i, new_point)
                 if len(row) == max_len:
+                    print( "break max len")
                     break
                 else:
                     continue
@@ -51,56 +55,95 @@ def check_row(row, space, max_len, x_min, x_max):
                 row.insert(i+1, new_point)
                 
             if len(row) == max_len:
+                    print( "break max len")
                     break
             else:
-                control_rows(row, point_list, space_list, max_len)
+                row = control_rows(row, point_list, space_list, max_len)
+                break
 
-        if row[i+1][0]-row[i][0] > (space*1.2) and row[i+1][0]-row[i][0] < (space*1.4):
-            #print("add insecure oint at",  i, " position", row[i][0])
+        if row[i+1][0]-row[i][0] > (space*1) and row[i+1][0]-row[i][0] <= (space*1.6):
+            print("add insecure oint at",  i, " position", row[i][0])
             new_point = [(row[i][0]+space), row[i][1]]
             point_list.append(new_point)
             space_list.append(row[i+1][0]-row[i][0])
-            if len(row) == max_len:
-                    break
-            else:
-                continue
+            continue
 
-        if row[i+1][0]-row[i][0] > (space*1.4):
+        if row[i+1][0]-row[i][0] > (space*1.6):
             
             #print("insert at",  i, " position", row[i][0])
             new_point = [(row[i][0]+space), row[i][1]]
             row.insert(i+1, new_point)
             skip = True
             if len(row) == max_len:
+                    print( "break max len")
                     break
             else:
                 continue
+        if i == range(len(row)):
+            print("last control of row")
+            row = control_rows(row, point_list, space_list, max_len)
         
+    if len(row) !=20:
+        row = control_rows(row, point_list, space_list, max_len)   
 
-        
+
     new_row = Sort_x(row)
+    print("new_row", new_row)
     return row
 
 def control_rows(row, point_list, space_list, max_len):
     #print("point_list" ,point_list)
+    corrected_row = row
+    print("starting control rows")
+    print("space_list", space_list)
     num_missing_circles = max_len - len(row)
+    print("num_missing_circles", num_missing_circles)
     if num_missing_circles !=0:
         if num_missing_circles == len(point_list):
+            print("missing = num insecure")
             for point in range(len(point_list)):
                 new_point = point_list[point]
-                row.append(new_point)
+                corrected_row.append(new_point)
+                num_missing_circles -=1
         else: 
+            print("missing != num insecure")
             for point in range(len(point_list)):
-                max_space = max(row)
-                index_max_space = row.index(max_space)
-                row.append(point_list[index_max_space])
+                max_space = max(space_list)
+                index_max_space = space_list.index(max_space)
+                corrected_row.append(point_list[index_max_space])
                 del point_list[index_max_space]
                 del space_list[index_max_space]
+                num_missing_circles -= 1
 
                 if len(row)==max_len:
+                    print( "break max len")
                     break
                 else:
                     continue
+    if num_missing_circles != 0:
+        spaces = []
+        for i in range(len(row)-2):
+            print("space: ", int(row[i][0]), "-", int(row[i+1][0]))
+            spaces.append(abs(int(row[i][0])-int(row[i+1][0])))
+        for i in range(num_missing_circles):
+            print("spaces", spaces)
+            max_space = max(spaces)
+            space_index = spaces.index(max_space)
+            print("row[space_index][0]", row[space_index][0])
+            print("max_space" , max_space)
+            print("int(row[space_index][0])+ 0.5*max_space", int(row[space_index][0])+ 0.5*max_space)
+            new_point = [int(row[space_index][0])+ 0.5*max_space,row[space_index][1]]
+            row.insert(i+1, new_point)
+            del spaces[space_index]
+            num_missing_circles -= 1
+            print(" new_num_missing", num_missing_circles)
+            if num_missing_circles ==0:
+                break
+        print("filled grid with plan c")
+
+        
+            
+    return row
             
 
 
@@ -153,8 +196,10 @@ def get_avarege_color(point, im):
     #print("point", point)
     for i in range(2):
         for z in range(2):
+            print(round(point[1]+i), round(point[0]+z))
             color = im[round(point[1]+i), round(point[0]+z)]
             colors.append(color)
+            print(round(point[1]-i), round(point[0]-z))
             color = im[round(point[1]-i), round(point[0]-z)]
             colors.append(color)
     
@@ -228,11 +273,7 @@ def get_matrix(image, circles, matrix_Type):
 
     color_name_grid = []
     i = 0
-    for row in grids:
-        print("line: ", i)
-        print("len grid_row:", len(row))
-        print(row)
-        i += 1
+    
     index = 0
     for row in grids: #cutted_grids  
        # print("index", index) 
@@ -247,7 +288,7 @@ def get_matrix(image, circles, matrix_Type):
     #print("color_name_grid", color_name_grid)
     for row in color_name_grid:
         print("len color row:", len(row))
-    #display_lego_pattern(color_name_grid)
+    display_lego_pattern(color_name_grid)
     return color_name_grid, cutted_grids
 
 
@@ -403,6 +444,7 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     step_index = 0
 
     for template in template_matrix_list:
+        step_index = 0
         for step_both_matrixs in template:
             step = step_both_matrixs[1]
             similarity, index_x, index_y= get_similarity(matrix_image,step)
