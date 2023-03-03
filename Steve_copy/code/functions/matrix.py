@@ -292,54 +292,81 @@ def get_matrix(image, circles, matrix_Type):
     return color_name_grid, cutted_grids
 
 
-def get_similarity(picture_grid, plan_grid):
+def get_similarity(picture_grid, plan_grid, plan_position_grid):
     #print("picture_grid",picture_grid)
     row_pic= len(picture_grid)
     column_pic = len(picture_grid[0])
 
-    row_plan = len(plan_grid)
-    column_plan = len(plan_grid[0])
+   
 
-    row_diff = row_pic - row_plan +1
-    column_diff = column_pic  - column_plan +1
-
+    best_comp_list = []
+    best_max_similarity = 0
+    best_index_x = 0
+    best_index_y = 0
+    best_rotated_grid = []
+    best_rotated_plan_position_grid = []
+    rotation = [0, 90, 180, 270]
     
-    comp_list = []
+    numpy_plan_grid = np.array(plan_grid)
+    rotated_plan_grid = numpy_plan_grid
+
+    numpy_plan_position_grid = np.array(plan_position_grid)
+    rotated_plan_position_grid = numpy_plan_position_grid
     
+    for degree in rotation:
+        print("degree: ", degree)
+        comp_list = []
+        
 
-    for row_comp in range(row_diff):
-        comp_row_list = []
-        for column_comp in range(column_diff):
-            number_of_same_colors = 0
-            
-            
-            for i in range(len(plan_grid)):
+        if degree == 0:
+            rotated_plan_grid = numpy_plan_grid
+            rotated_plan_position_grid = numpy_plan_position_grid
+        else:
+            rotated_plan_grid = np.rot90(rotated_plan_grid)
+            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid)
+
+        row_plan = len(rotated_plan_grid)
+        column_plan = len(rotated_plan_grid[0])
+
+        row_diff = row_pic - row_plan +1
+        column_diff = column_pic  - column_plan +1
+
+        for row_comp in range(row_diff):
+            comp_row_list = []
+            for column_comp in range(column_diff):
+                number_of_same_colors = 0
                 
-                for z in range(len(plan_grid[i])):
-                    plan_color = plan_grid[i][z]
-                    pic_color = picture_grid[i+row_comp][z+column_comp]
-                    if plan_color == pic_color:
-                        number_of_same_colors +=1
-            #print(number_of_same_colors)
-            
-            comp_row_list.append(number_of_same_colors)
-            
                 
-        comp_list.append(comp_row_list)
+                for i in range(len(rotated_plan_grid)):
+                    
+                    for z in range(len(rotated_plan_grid[i])):
+                        plan_color = rotated_plan_grid[i][z]
+                        pic_color = picture_grid[i+row_comp][z+column_comp]
+                        if plan_color == pic_color:
+                            number_of_same_colors +=1
+                #print(number_of_same_colors)
+                
+                comp_row_list.append(number_of_same_colors)
+                
+                    
+            comp_list.append(comp_row_list)
 
-  
-    ################################print("comp_list", comp_list)
+        max_similarity, index_x,  index_y = get_max_value(comp_list)
+        if max_similarity >= best_max_similarity:
+            print("higher sim found")
+            best_max_similarity = max_similarity
+            best_index_x = index_x
+            best_index_y = index_y
+            best_comp_list = comp_list
+            best_rotated_grid = rotated_plan_grid
+            best_rotated_plan_position_grid = rotated_plan_position_grid
 
-    #max_similarity = np.amax(comp_list)
-    #index_x = index_2d(comp_list, 90)
-    #max_index = np.argmax(comp_list)
-
-    #max_similarity = comp_list[max_index]
-    max_similarity, index_x,  index_y = get_max_value(comp_list)
-    total_pixel = len(plan_grid) * len(plan_grid[0])
+    print("best_rot_grid", best_rotated_grid)
+    print("best_max_similarity", best_max_similarity)
+    total_pixel = len(best_rotated_grid) * len(best_rotated_grid[0])
     #print("pos_index",index_x,  index_y) 
-    similarity = (max_similarity/total_pixel)*100
-    return similarity, (index_x+round(0.5*len(plan_grid))-1), (index_y+round(0.5*len(plan_grid))-1)
+    similarity = (best_max_similarity/total_pixel)*100
+    return similarity, (best_index_x+round(0.5*len(best_rotated_grid[0]))-1), (best_index_y+round(0.5*len(best_rotated_grid))-1), best_rotated_plan_position_grid, best_comp_list
 
 
 
@@ -439,6 +466,7 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     current_max_index_y = 0
     current_max_template_index = 0
     current_max_step_index = 0
+    current_plan_position_grid = []
 
     template_index = 0
     step_index = 0
@@ -446,21 +474,23 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     for template in template_matrix_list:
         step_index = 0
         for step_both_matrixs in template:
-            step = step_both_matrixs[1]
-            similarity, index_x, index_y= get_similarity(matrix_image,step)
+            step_position_matrix = step_both_matrixs[1]
+            step_color_matrix = step_both_matrixs[0]
+            similarity, index_x, index_y, rotated_plan_position_grid, comp_list= get_similarity(matrix_image,step_position_matrix, step_color_matrix)
             if similarity > current_max_similarity:
                 current_max_similarity = similarity
                 current_max_index_x = index_x
                 current_max_index_y = index_y
                 current_max_template_index = template_index
                 current_max_step_index = step_index
+                current_plan_position_grid = rotated_plan_position_grid
             step_index +=1
         template_index +=1
 
     template_name = template_name_list[current_max_template_index][current_max_step_index]
     image_color_matrix = template_matrix_list[current_max_template_index][current_max_step_index][1]
     template_position_matrix = template_matrix_list[current_max_template_index][current_max_step_index][0]
-    return rotated_image, template_name,  matrix_image_position, template_position_matrix, current_max_index_x, current_max_index_y, current_max_similarity
+    return rotated_image, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list
 
 def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
     print("template_posotion_matrix", len(template_posotion_matrix), len(template_posotion_matrix[0]))
