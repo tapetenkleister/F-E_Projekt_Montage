@@ -1,6 +1,6 @@
 import numpy as np
 
-def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 10):
+def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12):
     """This function takes a point (x and y), an image, and samples the average color in a radius of 'radius' pixels around the point.
     It then decides if it's either yellow, red, blue or green and returns this decision.
 
