@@ -151,6 +151,12 @@ def take_image(exposure_ms:int=20,debug:bool=False):
         print("Maximum image height:\t", height)
         print()
 
+    #set lower framerate to have more time for exposure 10fps means 100ms exposure time
+    new_framerate = ueye.c_double(10)
+    nRet = ueye.is_SetFrameRate(hCam, new_framerate, ueye.c_double(0))
+    if nRet != ueye.IS_SUCCESS:
+        print("is_SetFrameRate ERROR")  
+
     #setting the exposure time 0-40ms at 25fps which is standard
     new_exposure = ueye.c_double(exposure_ms)
     nRet = ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_SET_EXPOSURE, new_exposure, 8)
