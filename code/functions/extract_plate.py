@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from find_closest_corner import find_closest_corner
 from showInMovedWindow import showInMovedWindow
-def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
+def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False) ->np.ndarray:
     """This functions returns a perspectively warped image consisting of a plane which is outlined by 4 aruco markers.
     The 4x4_1000 markers are labeled 1-4 and have to be positioned in order top left, bottom left, bottom right and top right.
     This counterclockwise positioning is necessary.
@@ -28,10 +28,12 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     arucoParams.adaptiveThreshWinSizeMax = 23  # default 23
     arucoParams.adaptiveThreshWinSizeStep = 10  # default 10
     arucoParams.adaptiveThreshConstant = 7      # default 7
+
+    #standard of this parameter is to high if the white border of the aruco marker is not wide enough
     arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-   
+    #assume image is somewhat center
     h, w, _ = image.shape
     center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
@@ -39,7 +41,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     clean_frame = image.copy()
 
     # detect ArUco markers in the input frame
-    (corners, ids, rejected) = detector.detectMarkers(frame)
+    (corners, ids, _) = detector.detectMarkers(frame)
     
     inner_corners=[]
 
@@ -54,21 +56,23 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
             # order)
             corners = markerCorner.reshape((4, 2))
 
-             #compute inner corner
+             #compute inner corner by finding the closest corner to the center of each marker
             inner_corner = find_closest_corner(center, corners)
             inner_corners.append([inner_corner[0],inner_corner[1],markerID])
-
             (topLeft, topRight, bottomRight, bottomLeft) = corners
+
             # convert each of the (x, y)-coordinate pairs to integers
             topRight = (int(topRight[0]), int(topRight[1]))
             bottomRight = (int(bottomRight[0]), int(bottomRight[1]))
             bottomLeft = (int(bottomLeft[0]), int(bottomLeft[1]))
             topLeft = (int(topLeft[0]), int(topLeft[1]))
+
             # draw the bounding box of the ArUCo detection
             cv2.line(frame, topLeft, topRight, (0, 255, 0), 1)
             cv2.line(frame, topRight, bottomRight, (0, 255, 0), 1)
             cv2.line(frame, bottomRight, bottomLeft, (0, 255, 0), 1)
             cv2.line(frame, bottomLeft, topLeft, (0, 255, 0), 1)
+
             # compute and draw the center (x, y)-coordinates of the
             # ArUco marker
             cX = int((topLeft[0] + bottomRight[0]) / 2.0)
@@ -81,16 +85,15 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.5, (0, 255, 0), 2)
     else:
-        print(f'Error: {len(corners)} detected!')
-    # show the output frame
-    detected_markers = frame.copy()
-
-    
+        #raise Exception("Could not detect 4 Aruco markers")
+        raise Exception("Could not detect 4 Aruco markers. Detected: "+str(len(corners))+" markers. Please check the image and try again.")
+   
 
     #sort centers by id: from 1 to 4 starting at top left going counterclockwise
     inner_corners = sorted(inner_corners, key=lambda x: x[2])
     if debug:
         print('Aruco inner corner position and ID:',inner_corners)
+
     #remove the ids from the coordinates (just keep the first to elements)
     inner_corners = [x[:2] for x in inner_corners]
    
@@ -101,31 +104,31 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False):
     (tl, bl, br, tr) = inner_corners
     bottomWidth = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
     topWidth = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
+
     # compute the width of the new image
     rightHeight = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
     leftHeight = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
 
-    # take the maximum of the width and height values to reach
-    # our final dimensions
+    # take the maximum of the width and height values to reach the final dimensions
     maxWidth = max(int(bottomWidth), int(topWidth))
     maxHeight = max(int(rightHeight), int(leftHeight))
 
-    # construct destination points which will be used to
-    # map the screen to a top-down, "birds eye" view
+    # construct our destination points which will be used to map the screen to a top-down, "birds eye" view
     dst_pts = np.array([
         [0, 0],
         [0, maxHeight-1],
         [maxWidth-1, maxHeight-1],
         [maxWidth - 1, 0]], dtype = "float32")
+    
     # the perspective transformation matrix
     M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+    detected_markers = frame.copy()
 
     # directly warp the rotated rectangle to get the straightened rectangle
     warp = cv2.warpPerspective(frame, M, (maxWidth, maxHeight))
     warp_clean = cv2.warpPerspective(clean_frame, M, (maxWidth, maxHeight))
 
-
-
+    #show results if debug is true
     if debug:
         showInMovedWindow('org', image,0,10)
         showInMovedWindow('detected markers', detected_markers,310,10)

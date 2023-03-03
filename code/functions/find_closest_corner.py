@@ -1,6 +1,6 @@
 import math
 
-def find_closest_corner(center:tuple, corners:list):
+def find_closest_corner(center:tuple, corners:list) -> tuple:
     """Checks cornerpoints distance to a given point and the one with the lowest distance is returned.
 
     Args:

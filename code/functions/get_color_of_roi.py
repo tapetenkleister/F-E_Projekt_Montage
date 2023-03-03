@@ -1,20 +1,21 @@
 import numpy as np
 
-def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12):
+def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12) ->str:
     """This function takes a point (x and y), an image, and samples the average color in a radius of 'radius' pixels around the point.
     It then decides if it's either yellow, red, blue or green and returns this decision.
 
     Args:
         point (list): list of x and y coordinates
         image (np.ndarray): Image to sample from
-        sample_size (int, optional): Square region of interes with length of radius. Defaults to 10.
+        sample_size (int, optional): Square region of interes with length of radius. Defaults to 12.
 
     Returns:
         string: Name of the sampled color. Either yellow, red, blue or green.
     """
-    
+    # Convert the point to integers
     x = int(point[0])
     y = int(point[1])
+
     # Calculate the coordinates of the region of interest
     x_min = max(x - sample_size, 0)
     y_min = max(y - sample_size, 0)
