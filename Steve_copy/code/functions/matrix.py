@@ -87,7 +87,7 @@ def check_row(row, space, max_len, x_min, x_max):
         if row[i+1][0]-row[i][0] > (space*1.6):
             # Adding a new point between the current point and the next point to reduce the spacing
             
-            ##print("insert at",  i, " position", row[i][0])
+            print("insert at",  i, " position", row[i][0])
             new_point = [(row[i][0]+space), row[i][1]]
             row.insert(i+1, new_point)
             skip = True
@@ -102,8 +102,8 @@ def check_row(row, space, max_len, x_min, x_max):
             row = control_rows(row, point_list, space_list, max_len)
     # Checking if the row has reached the maximum length
     
-    if len(row) !=20:
-        row = control_rows(row, point_list, space_list, max_len)   
+    while len(row) < 20:
+        row = check_row(row, space, max_len, x_min, x_max) 
 
 
     new_row = Sort_x(row)
@@ -197,7 +197,7 @@ def control_rows(row, point_list, space_list, max_len):
 
         
             
-    return row, missing_circles
+    return row
             
 
 
@@ -769,8 +769,8 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     end_point_y = int(y +   template_legnth_y)
      # Highlight the target area in the image with a rectangle and a circle
     print("end_point_y,end_point_x", end_point_y,end_point_x)
-    highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 0, 0), 10)
-    highlighted_image = cv2.circle(image, (x,y), 5, 0, 10)
+    highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 10)
+    highlighted_image = cv2.circle(image, (x,y), 5, (0, 255, 0), 10)
     return highlighted_image
 
     
