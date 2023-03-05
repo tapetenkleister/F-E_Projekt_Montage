@@ -10,6 +10,7 @@ from extract_green_plate import extract_green_plate
 from extract_plate import extract_plate
 from display_lego_pattern import display_lego_pattern
 from get_color import get_color_of_roi
+#from functions import *
 
 def get_space(row:list):
     """
@@ -72,6 +73,7 @@ def check_row(row, space, max_len, x_min, x_max):
             else:
                 # If the row is not at the maximum length, control the spaces and add new points if necessary
                 row = control_rows(row, point_list, space_list, max_len)
+                
                 break
         # Checking if there is a gap between the current point and the next point (insecure spaces)
         if row[i+1][0]-row[i][0] > (space*1) and row[i+1][0]-row[i][0] <= (space*1.6):
@@ -166,8 +168,10 @@ def control_rows(row, point_list, space_list, max_len):
                     continue
                 
     # if there are still missing circles, place additional circles until the max_length is archieved. (begins with biggest space)
+    missing_circles = False
     if num_missing_circles != 0:
         spaces = []
+        print("test_row", row)
         for i in range(len(row)-2):
             print("space: ", int(row[i][0]), "-", int(row[i+1][0]))
             spaces.append(abs(int(row[i][0])-int(row[i+1][0])))
@@ -185,12 +189,15 @@ def control_rows(row, point_list, space_list, max_len):
             num_missing_circles -= 1
             print(" new_num_missing", num_missing_circles)
             if num_missing_circles ==0:
+                missing_circles = False
+                break
+            if len(spaces) == 0:
                 break
         print("filled grid with plan c")
 
         
             
-    return row
+    return row, missing_circles
             
 
 
@@ -413,8 +420,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     """
     # Initialize variables to hold the best matching position and orientation for the plan grid within the picture grid
 
-    row_pic= len(picture_grid)
-    column_pic = len(picture_grid[0])
+    
 
    
 
@@ -446,10 +452,15 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
         else:
             rotated_plan_grid = np.rot90(rotated_plan_grid)
             rotated_plan_position_grid = np.rot90(rotated_plan_position_grid)
+
+        padded_matrix = add_padding(rotated_plan_grid, picture_grid,debug=False)
         # Get the dimensions of the rotated plan grid and the difference between the dimensions of the picture grid and
         # the rotated plan grid
         row_plan = len(rotated_plan_grid)
         column_plan = len(rotated_plan_grid[0])
+
+        row_pic= len(padded_matrix)
+        column_pic = len(padded_matrix[0])
 
         row_diff = row_pic - row_plan +1
         column_diff = column_pic  - column_plan +1
@@ -466,7 +477,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
                     
                     for z in range(len(rotated_plan_grid[i])):
                         plan_color = rotated_plan_grid[i][z]
-                        pic_color = picture_grid[i+row_comp][z+column_comp]
+                        pic_color = padded_matrix[i+row_comp][z+column_comp]
                         if plan_color == pic_color:
                             number_of_same_colors +=1
                 #print(number_of_same_colors)
@@ -493,8 +504,10 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     print("index x y in image", best_index_x+round(0.5*len(best_rotated_grid[0]))-1,best_index_y+round(0.5*len(best_rotated_grid))-1 )
     #print("pos_index",index_x,  index_y) 
     similarity = (best_max_similarity/total_pixel)*100
-    im_index_x = best_index_x+round(0.5*len(best_rotated_grid[0]))-1
-    im_index_y = best_index_y+round(0.5*len(best_rotated_grid))-1
+    im_index_x = index_x-1
+    im_index_y = index_y-1
+    # im_index_x = best_index_x+round(0.5*len(best_rotated_grid[0]))-1
+    # im_index_y = best_index_y+round(0.5*len(best_rotated_grid))-1
     return similarity, im_index_x, im_index_y, best_rotated_plan_position_grid, best_comp_list
 
 
@@ -735,6 +748,11 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     print("index x, y", index_x, index_y)
     # Compute the pixel position of the target
     position = image_position_matrix[index_x][index_y]
+    i = 0
+    for row in image_position_matrix:
+        print("line", i, row)
+        i +=1
+    print("position" , position)
     x = int(round(position[0])+rest_x)
     y = int(round(position[1])+rest_y)
     print("x, y:", x,   y)
@@ -747,8 +765,8 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     start_point_x = int(x -   template_legnth_x)
     print("start_point_y,start_point_x", start_point_y,start_point_x)
 
-    end_point_x = int(x +  template_legnth_y)
-    end_point_y = int(y +   template_legnth_x)
+    end_point_x = int(x +  template_legnth_x)
+    end_point_y = int(y +   template_legnth_y)
      # Highlight the target area in the image with a rectangle and a circle
     print("end_point_y,end_point_x", end_point_y,end_point_x)
     highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 0, 0), 10)
@@ -757,4 +775,40 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
 
     
 
-    
+def add_padding(array_template:np.ndarray or list, array_lego_plate:np.ndarray or list,debug:bool=False) ->np.ndarray:
+    """Adds padding to the lego plate array depending on the size of the template array
+
+    Args:
+        array_template (np.ndarray):  Array of the template (e.g.10x10 or 4x18)
+        array_lego_plate (np.ndarray): Array of the lego plate (20x20)
+        debug (bool, optional): Debug option. Defaults to False.
+    Returns:
+        np.ndarray: Array of the lego plate with padding
+    """ 
+    #if a list is giben, convert it to an array
+    if type(array_template) == list:
+        array_template = np.array(array_template)
+    if type(array_lego_plate) == list:
+        array_lego_plate = np.array(array_lego_plate)   
+
+    #get the size of the template in width and height   
+    template_height = array_template.shape[0]
+    template_width = array_template.shape[1]
+
+    #size of lego plate is 20x20 and is not to be padded with the string 'black' and different amount top/bottom and left/right
+    #padding for left/right sides is int(template_width/2) on each side
+    #padding for top/bottom is int(template_height/2) on each side
+    #add padding on the left and right side of lego plate
+    padding_amount_left_right= int(template_width/2)
+    padding_amount_top_bottom = int(template_height/2)
+
+    #debug information
+    if debug:
+        print('padding_amount_left_right', padding_amount_left_right)
+        print('padding_amount_top_bottom', padding_amount_top_bottom)
+
+    #add padding to lego plate
+    padded_matrix = np.pad(array_lego_plate, ((padding_amount_top_bottom, padding_amount_top_bottom), (padding_amount_left_right, padding_amount_left_right)),
+                           mode='constant', constant_values=('black'))
+
+    return padded_matrix
