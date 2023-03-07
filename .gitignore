@@ -129,8 +129,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 #data 
-*.jpg
-*.png
+/analysis
 *.csv
 *.odp
 *.ods
