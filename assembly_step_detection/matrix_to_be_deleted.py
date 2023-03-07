@@ -199,9 +199,6 @@ def control_rows(row, point_list, space_list, max_len):
             
     return row
             
-
-
-
 def Sort_y(sub_li):
     """
     This function sorts a list of points based on their y-coordinates in ascending order.
@@ -241,7 +238,6 @@ def Sort_x(sub_li):
                 sub_li[j + 1]= tempo
     return sub_li
 
-
 def closest(colors,color):
     """
     This function returns the color in the list 'colors' that is closest to the color 'color'.
@@ -260,7 +256,7 @@ def closest(colors,color):
     smallest_distance = colors[index_of_smallest]
     return smallest_distance 
 
-def get_avarege_color(point, im):
+def get_average_color(point:list, im:np.ndarray):
     """
     This function returns the name of the most common color of a region of pixels around a point.
 
@@ -388,18 +384,18 @@ def get_matrix(image, circles, matrix_Type):
        # print("index", index) 
         color_name_row = []
        # print("im_shape:", len(im), len(im[0]))
-        for point in row:      
-            color = get_avarege_color(point, im)  
-            #color = get_color_of_roi(point, im)        
+        for point in row:  
+            #alternative color detection    
+            #color = get_average_color(point, im)  
+            color = get_color_of_roi(point, im)        
             color_name_row.append(color)        
         color_name_grid.append(color_name_row)
         index += 1
     #print("color_name_grid", color_name_grid)
     for row in color_name_grid:
         print("len color row:", len(row))
-    display_lego_pattern(color_name_grid)
+    
     return color_name_grid, cutted_grids
-
 
 def get_similarity(picture_grid, plan_grid, plan_position_grid):
     """
@@ -419,10 +415,6 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
 
     """
     # Initialize variables to hold the best matching position and orientation for the plan grid within the picture grid
-
-    
-
-   
 
     best_comp_list = []
     best_max_similarity = 0
@@ -510,8 +502,6 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     # im_index_y = best_index_y+round(0.5*len(best_rotated_grid))-1
     return similarity, im_index_x, im_index_y, best_rotated_plan_position_grid, best_comp_list
 
-
-
 def get_max_value(comp_list):
     """
     Given a comparison list, find the maximum value and its corresponding indices.
@@ -542,9 +532,7 @@ def get_max_value(comp_list):
         
     return max_value, x,  y
 
-
-
-def safe_new_matrix(template_name, dir_list,  id_list, longest_side):
+def safe_new_matrix(template_name, dir_list, id_list, longest_side):
     """
     This function creates a new directory with the given template name and saves the position and color matrices of 
     each image in the directory list as JSON files in the newly created directory. 
@@ -565,12 +553,12 @@ def safe_new_matrix(template_name, dir_list,  id_list, longest_side):
     # Initialize variables and create the new directory
     plan_index = 0
     json_data = []
-    new_path = "..\..\Templates\\" + template_name
+    new_path = "Templates/" + template_name
 
     if not os.path.exists(new_path):
             os.makedirs(new_path)
     else:
-        print ("ERROR: File exist")
+        print ("ERROR: Folder already exist")
         return
     
     for dir in dir_list:
@@ -588,11 +576,11 @@ def safe_new_matrix(template_name, dir_list,  id_list, longest_side):
         json_data.append({position_matrix_name : matrix_plan_position, color_matrix_name: matrix_plan_color} )
         plan_index += 1
         # Save the image to the new directory
-        cv2.imwrite(new_path + "//" +os.path.basename(dir), image)
+        cv2.imwrite(new_path + "/" +os.path.basename(dir), image)
 
     # Save the JSON data to a file in the new directory
     if os.path.exists(new_path):
-        new_template_file = new_path + "\\" + template_name + ".json"    
+        new_template_file = new_path + "/" + template_name + ".json"    
         if os.path.isfile(new_template_file):
             print ("ERROR: File exist")
         else:
@@ -604,13 +592,13 @@ def safe_new_matrix(template_name, dir_list,  id_list, longest_side):
     
 def open_saved_matrix():
     """
-    This function opens the saved matrix from the file system and returns it.
+    This function opens a all available templates and returns a list of matrices containing plan positions and colors for each step of each template.
 
     Returns:
     - template_matrix_list: a list of matrices containing plan positions and colors for each step of each template. 
     - template_name_list: a list of strings containing names of each step of each template.
     """
-    path = "..\..\Templates\\"
+    path = "Templates/"
     dir_list = os.listdir(path)
     template_matrix_list = []
     template_name_list = []
@@ -618,10 +606,10 @@ def open_saved_matrix():
     # Iterate over directories in the template path
     for dir in dir_list:
         # Check if the file is a json file
-        for file in os.listdir(path  +  "//" + dir):
+        for file in os.listdir(path  +  "/" + dir):
             if ".json" in os.path.basename(file):
                 template_specific_matrix =[]
-                with open(path  +  "//" + dir + "//" +file, 'r') as openfile:
+                with open(path  +  "/" + dir + "/" +file, 'r') as openfile:
                     json_object = json.load(openfile)
                 template_all_steps_matrix =  []
                 template_all_steps_name =[]
@@ -643,7 +631,7 @@ def open_saved_matrix():
 
     return template_matrix_list, template_name_list
 
-def detect_matching_template(image, template_matrix_list, template_name_list):
+def detect_matching_template(image,detected_circles_list, template_matrix_list, template_name_list):
     """
     Detects a matching template from the provided list of template matrices for a given input image.
 
@@ -664,13 +652,10 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     """
     # Extract green plate from input image and correct its rotation
 
-    rotated_image = extract_green_plate(image, correct_rotation=True, debug=False)
-    # Detect circles in the rotated image
-    circles_im,rot_image = detect_circles(rotated_image,real_photo=True,expected_circles_per_longest_side=10,debug=False)
-    # Convert rotated image to RGB
-    im_image = cv2.cvtColor(rotated_image,cv2.COLOR_BGR2RGB)
     # Extract matrix from the image using detected circles
-    matrix_image, matrix_image_position= get_matrix(im_image, circles_im, "image")
+    matrix_image, matrix_image_position= get_matrix(image, detected_circles_list, "image")
+    # Extract the color matrix from the image and create a visualisation
+    color_matrix = display_lego_pattern(matrix_image)
     # Initialize variables to keep track of best match
     current_max_similarity = 0
     current_max_index_x = 0 
@@ -705,7 +690,7 @@ def detect_matching_template(image, template_matrix_list, template_name_list):
     template_name = template_name_list[current_max_template_index][current_max_step_index]
     print("template_name", template_name)
     print("sim", current_max_similarity)
-    return rotated_image, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list
+    return color_matrix, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list
 
 def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
     """
@@ -769,46 +754,8 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     end_point_y = int(y +   template_legnth_y)
      # Highlight the target area in the image with a rectangle and a circle
     print("end_point_y,end_point_x", end_point_y,end_point_x)
-    highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 10)
-    highlighted_image = cv2.circle(image, (x,y), 5, (0, 255, 0), 10)
+    highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 5)
+    highlighted_image = cv2.circle(image, (x,y), 3, (0, 255, 0), 2)
     return highlighted_image
 
-    
-
-def add_padding(array_template:np.ndarray or list, array_lego_plate:np.ndarray or list,debug:bool=False) ->np.ndarray:
-    """Adds padding to the lego plate array depending on the size of the template array
-
-    Args:
-        array_template (np.ndarray):  Array of the template (e.g.10x10 or 4x18)
-        array_lego_plate (np.ndarray): Array of the lego plate (20x20)
-        debug (bool, optional): Debug option. Defaults to False.
-    Returns:
-        np.ndarray: Array of the lego plate with padding
-    """ 
-    #if a list is giben, convert it to an array
-    if type(array_template) == list:
-        array_template = np.array(array_template)
-    if type(array_lego_plate) == list:
-        array_lego_plate = np.array(array_lego_plate)   
-
-    #get the size of the template in width and height   
-    template_height = array_template.shape[0]
-    template_width = array_template.shape[1]
-
-    #size of lego plate is 20x20 and is not to be padded with the string 'black' and different amount top/bottom and left/right
-    #padding for left/right sides is int(template_width/2) on each side
-    #padding for top/bottom is int(template_height/2) on each side
-    #add padding on the left and right side of lego plate
-    padding_amount_left_right= int(template_width/2)
-    padding_amount_top_bottom = int(template_height/2)
-
-    #debug information
-    if debug:
-        print('padding_amount_left_right', padding_amount_left_right)
-        print('padding_amount_top_bottom', padding_amount_top_bottom)
-
-    #add padding to lego plate
-    padded_matrix = np.pad(array_lego_plate, ((padding_amount_top_bottom, padding_amount_top_bottom), (padding_amount_left_right, padding_amount_left_right)),
-                           mode='constant', constant_values=('black'))
-
-    return padded_matrix
+   

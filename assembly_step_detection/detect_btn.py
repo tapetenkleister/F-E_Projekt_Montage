@@ -1,8 +1,9 @@
 from functions import *
-from matrix_to_be_deleted import*
 import cv2
-import  sys
+import  sys 
 import time
+import faulthandler; faulthandler.enable()
+
 #-----------------------------------------------------------
 #this function is called when the button is pressed to detect the assembly step
 #-----------------------------------------------------------
@@ -10,15 +11,11 @@ start = time.time()
 try:
     #load the image taken with IDS camera if it is available otherwise print an error message
     img = cv2.imread('Images_Results/image.jpg')
-    if img is None:
-        print('No image available')
-        sys.exit()
-    else:
-        #extract the lego plate
-        extracted_lego_plate = extract_plate(img, scale=1, debug=False)
 
+        #extract the lego plate with aruco markers
+    extracted_lego_plate = extract_plate(img, scale=1, debug=False)
 except:
-    print('Error in extracting the lego plate')
+    print('Error in extracting lego plate')
     
 
 try:
@@ -33,13 +30,14 @@ try:
     template_matrix_list, template_name_list = open_saved_matrix('Templates/')
 
     #compare all templates by folding their color_matrix over the color_matrix of the image (rotation included)
-    color_matrix, detected_assembly_step,  matrix_image_position, template_position_matrix, index_x, index_y, max_similarity, comp_list = detect_matching_template(detected_circles_list, template_matrix_list, template_name_list)
-    cv2.imwrite('Images_Results/color_matrix.jpg',color_matrix)
+    color_matrix, detected_assembly_step,  matrix_image_position, template_position_matrix, index_x, index_y, max_similarity, comp_list = detect_matching_template(extracted_lego_plate, detected_circles_list, template_matrix_list, template_name_list)
+    color_matrix = color_matrix.astype(np.uint8)
+    color_matrix = cv2.cvtColor(color_matrix, cv2.COLOR_RGB2BGR)
+    cv2.imwrite('Images_Results/color_matrix.png',color_matrix)
 
-    
-
-except:
-    print('Error in detecting assembly step')
+except Exception as e:
+    print('Error in detecting matching template')
+    print(e)
 
 try:
     #generate an image with the detected step in green frame
