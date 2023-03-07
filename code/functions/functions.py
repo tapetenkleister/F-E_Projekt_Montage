@@ -361,7 +361,6 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
 
     return circle_list,result
 
-
 def add_padding(array_template:np.ndarray or list, array_lego_plate:np.ndarray or list,debug:bool=False) ->np.ndarray:
     """Adds padding to the lego plate array depending on the size of the template array
 
