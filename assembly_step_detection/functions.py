@@ -684,7 +684,7 @@ def get_average_color(point:list, im:np.ndarray):
     data = Counter(colors_name)    
     return data.most_common(1)[0][0]
 
-def get_matrix(image, circles, matrix_Type):
+def get_matrix(image, circles):
     """
     A function that generates a matrix of colors from an input image
     based on the locations of circular regions of interest (ROIs)
@@ -694,8 +694,7 @@ def get_matrix(image, circles, matrix_Type):
     - image: An input image as a numpy array
     - circles: A list of circles, where each circle is a tuple (x, y, r)
     representing the center coordinates (x, y) and radius (r) of a circular ROI
-    - matrix_Type: A string that specifies the type of output matrix: "image"
-    for an image-based matrix or "color" for a color-based matrix
+    
     
     Returns:
     - color_name_grid: A 2D list representing the generated matrix of colors
