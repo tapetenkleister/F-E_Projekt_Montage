@@ -801,7 +801,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     Returns:
         A tuple containing the similarity score, the x and y coordinates of the top left corner of the best matching 
         region of the plan grid in the picture grid, the plan position grid after any necessary rotations, and the 
-        similarity scores for all positions and rotations.
+        similarity scores for all positions and rotations(comp_list).
 
     """
     # Initialize variables to hold the best matching position and orientation for the plan grid within the picture grid
@@ -813,29 +813,24 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     best_rotated_grid = []
     best_rotated_plan_position_grid = []
     rotation = [0, 90, 180, 270]
+
     # Convert the plan grid and plan position grid to numpy arrays for easier manipulation
-
-    numpy_plan_grid = np.array(plan_grid)
-    rotated_plan_grid = numpy_plan_grid
-
-    numpy_plan_position_grid = np.array(plan_position_grid)
-    rotated_plan_position_grid = numpy_plan_position_grid
+    rotated_plan_grid = np.array(plan_grid)    
+    rotated_plan_position_grid = np.array(plan_position_grid)
     # Try all possible rotations of the plan grid to find the best matching position and orientation
 
     for degree in rotation:
-        #print("degree: ", degree)
+        # Rotate the plan grid clockwise and plan position grid by the specified degree
         comp_list = []
-        
-        # Rotate the plan grid and plan position grid by the current degree
 
-        if degree == 0:
-            rotated_plan_grid = numpy_plan_grid
-            rotated_plan_position_grid = numpy_plan_position_grid
-        else:
-            rotated_plan_grid = np.rot90(rotated_plan_grid)
-            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid)
-
+        #only aplly rotation if degree is not 0
+        if degree != 0:
+            rotated_plan_grid = np.rot90(rotated_plan_grid,degree/90,axes=(1,0))
+            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,degree/90,axes=(1,0))
+           
+        #Add padding to the picture grid to ensure that the folding result is the same shape as the picture grid originally
         padded_matrix = add_padding(rotated_plan_grid, picture_grid,debug=False)
+
         # Get the dimensions of the rotated plan grid and the difference between the dimensions of the picture grid and
         # the rotated plan grid
         row_plan = len(rotated_plan_grid)
@@ -868,29 +863,39 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
                 
                     
             comp_list.append(comp_row_list)
-        # Get the maximum similarity
+
+        # Get the maximum similarity score and the corresponding position of the rotated plan grid within the picture grid       
         max_similarity, index_x,  index_y = get_max_value(comp_list)
-        if max_similarity >= best_max_similarity:
-            #print("higher sim found")
+        print('rotation is', degree,)
+        print("best_max_similarity", max_similarity,'\n')
+       
+        if max_similarity > best_max_similarity:
+            rotation_with_best_similarity = degree
             best_max_similarity = max_similarity
             best_index_x = index_x
             best_index_y = index_y
             best_comp_list = comp_list
             best_rotated_grid = rotated_plan_grid
             best_rotated_plan_position_grid = rotated_plan_position_grid
+        
+        # print("best_max_similarity", best_max_similarity)
+        # print('rotation is', degree,'\n')
 
     #print("best_rot_grid", best_rotated_grid)
     #print("best_max_similarity", best_max_similarity)
+    #print('rotation_with_best_similarity', rotation_with_best_similarity)
     total_pixel = len(best_rotated_grid) * len(best_rotated_grid[0])
     #print("best index x y", best_index_x, best_index_y)
     #print("index x y in image", best_index_x+round(0.5*len(best_rotated_grid[0]))-1,best_index_y+round(0.5*len(best_rotated_grid))-1 )
     #print("pos_index",index_x,  index_y) 
     similarity = (best_max_similarity/total_pixel)*100
-    im_index_x = index_x-1
-    im_index_y = index_y-1
+    # -1 is because the index starts from 0 but in the real picture, the index starts from 1 which is added in detect_matching_template
+    im_index_x = best_index_x-1
+    im_index_y = best_index_y-1
+   
     # im_index_x = best_index_x+round(0.5*len(best_rotated_grid[0]))-1
     # im_index_y = best_index_y+round(0.5*len(best_rotated_grid))-1
-    return similarity, im_index_x, im_index_y, best_rotated_plan_position_grid, best_comp_list
+    return similarity, im_index_x, im_index_y, best_rotated_plan_position_grid, best_comp_list, rotation_with_best_similarity
 
 def get_max_value(comp_list):
     """
@@ -968,7 +973,7 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
     Detects a matching template from the provided list of template matrices for a given input image.
 
     Parameters:
-    image (numpy.ndarray): The input image as a NumPy array.
+    image (numpy.ndarray): The extracted lego plate image as a NumPy array.
     template_matrix_list (list): The list of template matrices.
     template_name_list (list): The list of names of the templates.
 
@@ -982,12 +987,12 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
     float: The similarity between the input image and the matched template.
     list: A list of dictionaries containing comparison data between the input image and the matched template.
     """
-    # Extract green plate from input image and correct its rotation
+   
     
-    # Extract matrix from the image using detected circles
+    # Extract matrix from the lego plate and the uncomplete circles list
     matrix_image, matrix_image_position= get_matrix(image, detected_circles_list, "image")
-    # Extract the color matrix from the image and create a visualisation
 
+    # Extract the color matrix from the image and create a visualisation
     color_matrix = display_lego_pattern(matrix_image)
     # Initialize variables to keep track of best match
     current_max_similarity = 0
@@ -995,6 +1000,7 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
     current_max_index_y = 0
     current_max_template_index = 0
     current_max_step_index = 0
+    rotation_with_best_similarity = 0
     current_plan_position_grid = []
 
     template_index = 0
@@ -1007,7 +1013,13 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
             step_position_matrix = step_both_matrixs[1]
             step_color_matrix = step_both_matrixs[0]
             # Compute similarity between the image matrix and the current template step
-            similarity, index_x, index_y, rotated_plan_position_grid, comp_list= get_similarity(matrix_image,step_position_matrix, step_color_matrix)
+            similarity, index_x, index_y, rotated_plan_position_grid, comp_list,rotation= get_similarity(matrix_image,step_position_matrix, step_color_matrix)
+           
+            print('similarity in %', similarity)
+            print('rotation', rotation)
+            template_name = template_name_list[template_index][step_index]
+            print("template_name:", template_name,'\n')
+
             # Update the best match if the current similarity is higher than the previous max
             if similarity > current_max_similarity:
                 current_max_similarity = similarity
@@ -1016,21 +1028,30 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
                 current_max_template_index = template_index
                 current_max_step_index = step_index
                 current_plan_position_grid = rotated_plan_position_grid
+                rotation_with_best_similarity = rotation
+            # print('current_max_similarity in %', current_max_similarity)
+            # print('rotation_with_best_similarity', rotation_with_best_similarity)
+            # template_name = template_name_list[current_max_template_index][current_max_step_index]
+            # print("template_name:", template_name,'\n')
+
+            
             step_index +=1
         template_index +=1
-    # Print some debug information
-    print("end templ pos x, y ", current_max_index_x, current_max_index_y)
-    template_name = template_name_list[current_max_template_index][current_max_step_index]
-    print("template_name", template_name)
-    print("sim", current_max_similarity)
-    return color_matrix, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list
 
-def higlight_target(image, image_position_matrix, template_posotion_matrix, index_x, index_y):
+    # Print some debug information
+    print("end templ pos x, y in picture", current_max_index_x+1, current_max_index_y+1)
+    template_name = template_name_list[current_max_template_index][current_max_step_index]
+    print("template_name:", template_name)
+    print("similarity", current_max_similarity)
+    print("rotation:", rotation_with_best_similarity)
+    return color_matrix, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list,rotation_with_best_similarity
+
+def higlight_target(image, image_position_matrix, template_position_matrix, index_x, index_y):
     """
     Given an input image, highlight the area of the target specified by its position in the image matrix.
 
     Args:
-    - image: the input image
+    - image: the input image of the extracted lego plate
     - image_position_matrix: the matrix of positions of the image pixels
     - template_position_matrix: the matrix of positions of the target pixels
     - index_x: the x-index of the target in the image matrix
@@ -1040,28 +1061,29 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     - highlighted_image: the input image with the target area highlighted
 
     """
-    #print("template_posotion_matrix", len(template_posotion_matrix[0]), len(template_posotion_matrix))
+    #print("template_position_matrix: amount of circles ", len(template_position_matrix[0]), len(template_position_matrix[1]))
     # Initialize variables to compute the gaps and rests between the target and the image pixels
 
     rest_x = 0
     rest_y = 0
+
     # Compute the gap and rest for the y-dimension (center of two circles)
     gab_x= 0
     gab_y= 0
-    if (len(template_posotion_matrix)%2) == 0:
+    if (len(template_position_matrix[1])%2) == 0:
         y1 = image_position_matrix[0][0][1]
         y2 = image_position_matrix[-1][0][1]    
         len_y = len(image_position_matrix)-1
         #print("y1, y2, len_y",  y1, y2, len_y)
-        gab_y = (y2 - y1)//len_y
+        gab_y = (y2 - y1)/len_y
         rest_y = 0.5 * gab_y
     # Compute the gap and rest for the x-dimension
-    if len(template_posotion_matrix[0])%2 == 0:
+    if len(template_position_matrix[0])%2 == 0:
         x1 = image_position_matrix[0][0][0]
         x2 = image_position_matrix[0][-1][0]    
         len_x = len(image_position_matrix[0])-1
         #print("x1, x2, len_y",  x1, x2, len_x)
-        gab_x = (x2 - x1)//len_x
+        gab_x = (x2 - x1)/len_x
         rest_x = 0.5 * gab_x
     #print("index x, y", index_x, index_y)
     # Compute the pixel position of the target
@@ -1071,16 +1093,18 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
         #print("line", i, row)
         i +=1
     #print("position" , position)
+    #print('rest_x, rest_y:', rest_x,   rest_y)
     x = int(round(position[0])+rest_x)
     y = int(round(position[1])+rest_y)
+    #print ('x, y:', x,   y)
     #print("x, y:", x,   y)
      # Compute the length of the target in the y- and x-dimensions
-    template_legnth_y = gab_y * int(round(0.5*len(template_posotion_matrix)))
-    template_legnth_x = gab_x * int(round(0.5*len(template_posotion_matrix[0])))
+    template_legnth_y = gab_y * int(round(0.5*len(template_position_matrix)))
+    template_legnth_x = gab_x * int(round(0.5*len(template_position_matrix[0])))
     #print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
 # Compute the start and end points of the target area in the image
     start_point_y = int(y -  template_legnth_y)
-    start_point_x = int(x -   template_legnth_x)
+    start_point_x = int(x -  template_legnth_x)
     #print("start_point_y,start_point_x", start_point_y,start_point_x)
 
     end_point_x = int(x +  template_legnth_x)
@@ -1113,12 +1137,15 @@ def safe_new_matrix(template_name:str,longest_side:int):
     id_list = []
     folder_path = 'Templates/'+template_name
 
-    #create the directory list and id list
+    #create the directory list and id list sorted by filename
     for filename in os.listdir(folder_path):
-        filepath = os.path.join(folder_path, filename)
-        if os.path.isfile(filepath) and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
-            dir_list.append(os.path.abspath(filepath))
-            id_list.append(os.path.splitext(filename)[0])
+        dir_list.append(folder_path + "/" + filename)
+        #extract id from filename, only numbers are allowed
+        id_list.append(int(''.join(filter(str.isdigit, filename))))
+          
+    dir_list.sort()
+    id_list.sort()      
+            
     try:
         #iterate through the image files in the directory list
         for dir in dir_list:
