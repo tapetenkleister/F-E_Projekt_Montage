@@ -564,7 +564,7 @@ def control_rows(row, point_list, space_list, max_len):
         spaces = []
         #print("test_row", row)
         for i in range(len(row)-2):
-            print("space: ", int(row[i][0]), "-", int(row[i+1][0]))
+            #print("space: ", int(row[i][0]), "-", int(row[i+1][0]))
             spaces.append(abs(int(row[i][0])-int(row[i+1][0])))
 
         for i in range(num_missing_circles):
@@ -921,64 +921,6 @@ def get_max_value(comp_list):
         current_x += 1# Increment the current row index.
         
     return max_value, x,  y
-
-def safe_new_matrix(template_name, dir_list, id_list, longest_side):
-    """
-    This function creates a new directory with the given template name and saves the position and color matrices of 
-    each image in the directory list as JSON files in the newly created directory. 
-
-    Args:
-    - template_name (str): The name of the template to be created.
-    - dir_list (list of str): A list of image file paths to be processed.
-    - id_list (list of int): A list of ids to be assigned to each image in the JSON data.
-    - longest_side (int): The expected number of circles to be detected along the longest side of the image.
-
-    Returns:
-    - None
-
-    Raises:
-    - None
-    """
-
-    # Initialize variables and create the new directory
-    plan_index = 0
-    json_data = []
-    new_path = "Templates/" + template_name
-
-    if not os.path.exists(new_path):
-            os.makedirs(new_path)
-    else:
-        print ("ERROR: Folder already exist")
-        return
-    
-    for dir in dir_list:
-        # Read the image and detect the circles
-        image = cv2.imread(dir)
-        circles_template, template_image = detect_circles(image,real_photo=False,expected_circles_per_longest_side=longest_side, debug=False)
-        # Extract the position and color matrices from the image
-        matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template, "plan")
-        position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
-        
-        matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
-        color_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Farben"
-        # Store the matrices and their associated ids in a dictionary and append it to the JSON data list
-
-        json_data.append({position_matrix_name : matrix_plan_position, color_matrix_name: matrix_plan_color} )
-        plan_index += 1
-        # Save the image to the new directory
-        cv2.imwrite(new_path + "/" +os.path.basename(dir), image)
-
-    # Save the JSON data to a file in the new directory
-    if os.path.exists(new_path):
-        new_template_file = new_path + "/" + template_name + ".json"    
-        if os.path.isfile(new_template_file):
-            print ("ERROR: File exist")
-        else:
-            with open(new_template_file, 'w') as f:
-                json.dump(json_data, f)
-    else:
-        print ("ERROR: Dir not exist")
-        return
     
 def open_saved_matrix(path):
     """
@@ -1149,4 +1091,66 @@ def higlight_target(image, image_position_matrix, template_posotion_matrix, inde
     highlighted_image = cv2.circle(image, (x,y), 3, (0, 255, 0), 2)
     return highlighted_image
 
-   
+def safe_new_matrix(template_name:str,longest_side:int):
+    """
+    This function saves the position and color matrices of
+    each image in the directory list as JSON files in the given directory. 
+
+    Args:
+    - template_name (str): The name of the template to be created.
+    - longest_side (int): The expected number of circles to be detected along the longest side of the image.
+
+    Returns:
+    - None
+
+    Raises:
+    - None
+    """
+    # Initialize variables and create the new directory
+    plan_index = 0
+    json_data = []
+    dir_list = []
+    id_list = []
+    folder_path = 'Templates/'+template_name
+
+    #create the directory list and id list
+    for filename in os.listdir(folder_path):
+        filepath = os.path.join(folder_path, filename)
+        if os.path.isfile(filepath) and filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')):
+            dir_list.append(os.path.abspath(filepath))
+            id_list.append(os.path.splitext(filename)[0])
+    try:
+        #iterate through the image files in the directory list
+        for dir in dir_list:
+            # Read the image and detect the circles
+            image = cv2.imread(dir)
+            circles_template, template_image = detect_circles(image,real_photo=False,expected_circles_per_longest_side=longest_side, debug=False)
+
+            # Extract the position and color matrices from the image
+            matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template, "plan")
+            position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
+
+            # Convert the position matrix to integers
+            matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
+            color_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Farben"
+
+            # Store the matrices and their associated ids in a dictionary and append it to the JSON data list
+            json_data.append({position_matrix_name : matrix_plan_position, color_matrix_name: matrix_plan_color} )
+            plan_index += 1
+            # Save the image to the new directory
+            cv2.imwrite(folder_path + "/" +os.path.basename(dir), image)
+
+        # Save the JSON data to a file in the new directory
+        if os.path.exists(folder_path):
+            new_template_file = folder_path + "/" + template_name + ".json"    
+            if os.path.isfile(new_template_file):
+                print ("ERROR: File exists already")
+            else:
+                with open(new_template_file, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            print ("ERROR: Dir not existent")
+            return
+    except Exception as e:
+        print("ERROR in saving a new building: ", e)
+        return
