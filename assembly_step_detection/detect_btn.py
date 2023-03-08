@@ -14,16 +14,17 @@ try:
 
         #extract the lego plate with aruco markers
     extracted_lego_plate = extract_plate(img, scale=1, debug=False)
-except:
+except Exception as e:
     print('Error in extracting lego plate')
-    
+    print(e)
 
 try:
     #detect circles in the extracted lego plate
     detected_circles_list,detected_circles_image = detect_circles(extracted_lego_plate, real_photo=True, debug=False)
     cv2.imwrite('Images_Results/circles.jpg', detected_circles_image)
-except:
+except Exception as e:
     print('Error in detecting circles')
+    print(e)
 
 try:
     #read in all available templates of steps
@@ -34,7 +35,6 @@ try:
     color_matrix = color_matrix.astype(np.uint8)
     color_matrix = cv2.cvtColor(color_matrix, cv2.COLOR_RGB2BGR)
     cv2.imwrite('Images_Results/color_matrix.png',color_matrix)
-
 except Exception as e:
     print('Error in detecting matching template')
     print(e)
@@ -43,8 +43,9 @@ try:
     #generate an image with the detected step in green frame
     result_image = higlight_target(extracted_lego_plate, matrix_image_position, template_position_matrix, index_x, index_y)
     cv2.imwrite('Images_Results/result.jpg', result_image)
-except:
+except Exception as e:
     print('Error in highlighting the final result')
+    print(e)
 
 #clock the time needed for the detection
 end = time.time()
