@@ -31,7 +31,7 @@ try:
     template_matrix_list, template_name_list = open_saved_matrix('Templates/')
 
     #compare all templates by folding their color_matrix over the color_matrix of the image (rotation included)
-    color_matrix, detected_assembly_step,  matrix_image_position, template_position_matrix, index_x, index_y, max_similarity, comp_list = detect_matching_template(extracted_lego_plate, detected_circles_list, template_matrix_list, template_name_list)
+    color_matrix, detected_assembly_step,  matrix_image_position, template_position_matrix, index_x, index_y, max_similarity, comp_list, rotation_with_best_similarity= detect_matching_template(extracted_lego_plate, detected_circles_list, template_matrix_list, template_name_list)
     color_matrix = color_matrix.astype(np.uint8)
     color_matrix = cv2.cvtColor(color_matrix, cv2.COLOR_RGB2BGR)
     cv2.imwrite('Images_Results/color_matrix.png',color_matrix)
@@ -54,6 +54,6 @@ duration = end - start
 with open('Images_Results/result.txt', 'w') as f:
     f.write(f'Detected assembly step: ||' + detected_assembly_step + '||')
     f.write(f' with '+str(max_similarity)+'%'+' similarity\n')
-    f.write(f'Center position in x and y: '+str(matrix_image_position)+'\n')
-    f.write(f'Rotation: '+str(template_position_matrix)+'°'+'\n')
+    f.write(f'Center position in x and y: '+str(index_x)+' '+str(index_y)+'\n')
+    f.write(f'Rotation: '+str(rotation_with_best_similarity)+'°'+'\n')
     f.write(f'Time needed for detection: '+str(duration*1000)+'ms')
