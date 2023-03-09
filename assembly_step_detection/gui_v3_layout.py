@@ -312,7 +312,7 @@ class Fenster(QMainWindow):
     #     self.label.setPixmap(pixmap) 
         
     def save_new_plan(self):
-        new_matrix = save_new_matrix()
+        new_matrix = safe_new_matrix()
 
 
 
