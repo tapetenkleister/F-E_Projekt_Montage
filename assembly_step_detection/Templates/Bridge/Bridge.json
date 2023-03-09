@@ -1,6 +1,6 @@
 [
     {
-        "Bauschritt 1 Positionen": [
+        "step 1 positions": [
             [
                 [
                     20,
@@ -326,7 +326,7 @@
                 ]
             ]
         ],
-        "Bauschritt 1 Farben": [
+        "step 1 colors": [
             [
                 "blue",
                 "blue",
@@ -438,7 +438,7 @@
         ]
     },
     {
-        "Bauschritt 2 Positionen": [
+        "step 2 positions": [
             [
                 [
                     20,
@@ -764,7 +764,7 @@
                 ]
             ]
         ],
-        "Bauschritt 2 Farben": [
+        "step 2 colors": [
             [
                 "blue",
                 "blue",
@@ -876,7 +876,7 @@
         ]
     },
     {
-        "Bauschritt 3 Positionen": [
+        "step 3 positions": [
             [
                 [
                     18,
@@ -1202,7 +1202,7 @@
                 ]
             ]
         ],
-        "Bauschritt 3 Farben": [
+        "step 3 colors": [
             [
                 "blue",
                 "blue",
@@ -1314,7 +1314,7 @@
         ]
     },
     {
-        "Bauschritt 4 Positionen": [
+        "step 4 positions": [
             [
                 [
                     16,
@@ -1640,7 +1640,7 @@
                 ]
             ]
         ],
-        "Bauschritt 4 Farben": [
+        "step 4 colors": [
             [
                 "blue",
                 "blue",

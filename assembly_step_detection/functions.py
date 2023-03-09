@@ -865,8 +865,8 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
 
         # Get the maximum similarity score and the corresponding position of the rotated plan grid within the picture grid       
         max_similarity, index_x,  index_y = get_max_value(comp_list)
-        print('rotation is', degree,)
-        print("best_max_similarity", max_similarity,'\n')
+        #print('rotation is', degree,)
+        #print("best_max_similarity", max_similarity,'\n')
        
         if max_similarity > best_max_similarity:
             rotation_with_best_similarity = degree
@@ -954,10 +954,10 @@ def open_saved_matrix(path):
                     template_step_matrix = []
                     # Add the matrix of plan positions and colors for each step to a list
 
-                    template_step_matrix.append(json_object[i]["Bauschritt " + str(i+1) + " Positionen"])
-                    template_step_matrix.append(json_object[i]["Bauschritt " + str(i+1) + " Farben"])
+                    template_step_matrix.append(json_object[i]["step " + str(i+1) + " positions"])
+                    template_step_matrix.append(json_object[i]["step " + str(i+1) + " colors"])
                     # Append the name of each step to a list
-                    template_all_steps_name.append(os.path.splitext(file)[0] + " Bauschritt " + str(i+1))
+                    template_all_steps_name.append(os.path.splitext(file)[0] + " step " + str(i+1))
                     template_all_steps_matrix.append(template_step_matrix)
                 # Append the list of matrices of each template to a list
                 template_matrix_list.append(template_all_steps_matrix)
@@ -1014,10 +1014,10 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
             # Compute similarity between the image matrix and the current template step
             similarity, index_x, index_y, rotated_plan_position_grid, comp_list,rotation= get_similarity(matrix_image,step_position_matrix, step_color_matrix)
            
-            print('similarity in %', similarity)
-            print('rotation', rotation)
+            #print('similarity in %', similarity)
+            #print('rotation', rotation)
             template_name = template_name_list[template_index][step_index]
-            print("template_name:", template_name,'\n')
+            #print("template_name:", template_name,'\n')
 
             # Update the best match if the current similarity is higher than the previous max
             if similarity > current_max_similarity:
@@ -1154,11 +1154,11 @@ def safe_new_matrix(template_name:str,longest_side:int):
 
             # Extract the position and color matrices from the image
             matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template)
-            position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
+            position_matrix_name = "step " + str(id_list[plan_index]) + " positions"
 
             # Convert the position matrix to integers
             matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
-            color_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Farben"
+            color_matrix_name = "step " + str(id_list[plan_index]) + " colors"
 
             # Store the matrices and their associated ids in a dictionary and append it to the JSON data list
             json_data.append({position_matrix_name : matrix_plan_position, color_matrix_name: matrix_plan_color} )
