@@ -989,7 +989,7 @@ def detect_matching_template(image,detected_circles_list, template_matrix_list, 
    
     
     # Extract matrix from the lego plate and the uncomplete circles list
-    matrix_image, matrix_image_position= get_matrix(image, detected_circles_list, "image")
+    matrix_image, matrix_image_position= get_matrix(image, detected_circles_list)
 
     # Extract the color matrix from the image and create a visualisation
     color_matrix = display_lego_pattern(matrix_image)
@@ -1153,7 +1153,7 @@ def safe_new_matrix(template_name:str,longest_side:int):
             circles_template, template_image = detect_circles(image,real_photo=False,expected_circles_per_longest_side=longest_side, debug=False)
 
             # Extract the position and color matrices from the image
-            matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template, "plan")
+            matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template)
             position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
 
             # Convert the position matrix to integers
