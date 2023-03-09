@@ -1154,7 +1154,7 @@ def safe_new_matrix(template_name:str,longest_side:int):
 
             # Extract the position and color matrices from the image
             matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template)
-            position_matrix_name = "step " + str(id_list[plan_index]) + " positions"
+            position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
 
             # Convert the position matrix to integers
             matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
