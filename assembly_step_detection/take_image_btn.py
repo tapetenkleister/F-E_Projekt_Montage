@@ -52,7 +52,7 @@ Returns:
 start = time.time()
 #Variables
 debug = False
-exposure_ms = 30
+exposure_ms = 35
 hCam = ueye.HIDS(0)             #0: first available camera;  1-254: The camera with the specified camera ID
 sInfo = ueye.SENSORINFO()
 cInfo = ueye.CAMINFO()
