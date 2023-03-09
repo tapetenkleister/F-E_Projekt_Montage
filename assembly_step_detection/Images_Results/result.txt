@@ -1,4 +1,4 @@
-Detected assembly step: ||Castle Bauschritt 1|| with 100.0% similarity
-Center position in x and y: 8 6
-Rotation: 270°
-Time needed for detection: 545.231819152832ms
+Detected assembly step: ||Bridge step 3|| with 100.0% similarity
+Center position in x and y: 10 10
+Rotation: 0°
+Time needed for detection: 1310.3415966033936ms
