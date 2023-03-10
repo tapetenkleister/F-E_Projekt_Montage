@@ -2,9 +2,12 @@
 from __future__ import annotations
 import numpy as np
 import cv2
-from pyueye import ueye
+import json
+import os
+from collections import Counter
 import imutils
 import math
+import webcolors
 
 def showInMovedWindow(winname:str, img:np.ndarray, x:int=100, y:int=100, width:int=300, height:int=500)->None:  
     """Shows an image as window with configurable position and size.
@@ -77,8 +80,8 @@ def display_lego_pattern(matrix:np.ndarray)->np.ndarray:
         print('error')
         raise ValueError("Input matrix doesn't consist of rows with same length")
     
-    color_map = {'green': [0, 200, 0],'lime': [0, 200, 0], 'yellow': [255, 255, 0],
-                 'blue': [0, 0, 255], 'red': [255, 0, 0], 'black': [50, 50, 50]}
+    #color lime is just in because of issues with cv2 version, usually only green is present
+    color_map = {'green': [0, 200, 0], 'yellow': [255, 255, 0], 'blue': [0, 0, 255], 'red': [255, 0, 0], 'black': [50, 50, 50]}
 
     # Convert the color matrix to a 3D array of RGB values
     rgb_colors = np.array([[color_map[c] for c in row] for row in matrix])
@@ -114,7 +117,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False) ->np.ndar
     arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-    #assume image is somewhat center
+    #assume image is relatively centered
     h, w, _ = image.shape
     center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
@@ -227,7 +230,7 @@ def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12) ->str:
     Args:
         point (list): list of x and y coordinates
         image (np.ndarray): Image to sample from
-        sample_size (int, optional): Square region of interes with length of radius. Defaults to 12.
+        sample_size (int, optional): Square region of interest with twice length of sample_size. Defaults to 12.
 
     Returns:
         string: Name of the sampled color. Either yellow, red, blue or green.
@@ -331,7 +334,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
 
     # docstring of HoughCircles: HoughCircles(image, method, dp, minDist[, circles[, param1[, param2[, minRadius[, maxRadius]]]]]) -> circles
     circles = cv2.HoughCircles(clahe, cv2.HOUGH_GRADIENT, 1, minDist, param1=param1, param2=param2, minRadius=minRadius, maxRadius=maxRadius)
-    result = image.copy()
+    result_image = image.copy()
 
     if circles is not None:
         circles = np.uint16(np.around(circles))
@@ -340,7 +343,7 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
             circle_list.append([x, y])
 
             #x-position, y-position, radius
-            cv2.circle(result, (x, y), r, (0, 255, 0), 2)
+            cv2.circle(result_image, (x, y), r, (0, 255, 0), 2)
             
     else:
         raise NameError('No circles found')
@@ -356,12 +359,12 @@ def detect_circles(image:np.ndarray, real_photo:bool, expected_circles_per_longe
         showInMovedWindow('org', image,0,10)
         showInMovedWindow('gray', gray,310,10)
         showInMovedWindow('clahe', clahe,620,10)
-        showInMovedWindow('result', result,930,10)
+        showInMovedWindow('result', result_image,930,10)
         cv2.waitKey(0)
 
-    return circle_list,result
+    return circle_list,result_image
 
-def add_padding(array_template:np.ndarray or list, array_lego_plate:np.ndarray or list,debug:bool=False) ->np.ndarray:
+def add_padding(array_template:np.ndarray, array_lego_plate:np.ndarray or list,debug:bool=False) ->np.ndarray:
     """Adds padding to the lego plate array depending on the size of the template array
 
     Args:
@@ -399,210 +402,782 @@ def add_padding(array_template:np.ndarray or list, array_lego_plate:np.ndarray o
 
     return padded_matrix
 
-def take_image(exposure_ms:int=20,debug:bool=False):
-#===========================================================================#
-#                                                                           #
-#  Copyright (C) 2006 - 2018                                                #
-#  IDS Imaging Development Systems GmbH                                     #
-#  Dimbacher Str. 6-8                                                       #
-#  D-74182 Obersulm, Germany                                                #
-#                                                                           #
-#  The information in this document is subject to change without notice     #
-#  and should not be construed as a commitment by IDS Imaging Development   #
-#  Systems GmbH. IDS Imaging Development Systems GmbH does not assume any   #
-#  responsibility for any errors that may appear in this document.          #
-#                                                                           #
-#  This document, or source code, is provided solely as an example          #
-#  of how to utilize IDS software libraries in a sample application.        #
-#  IDS Imaging Development Systems GmbH does not assume any responsibility  #
-#  for the use or reliability of any portion of this document or the        #
-#  described software.                                                      #
-#                                                                           #
-#  General permission to copy or modify, but not for profit, is hereby      #
-#  granted, provided that the above copyright notice is included and        #
-#  reference made to the fact that reproduction privileges were granted     #
-#  by IDS Imaging Development Systems GmbH.                                 #
-#                                                                           #
-#  IDS Imaging Development Systems GmbH cannot assume any responsibility    #
-#  for the use or misuse of any portion of this software for other than     #
-#  its intended diagnostic purpose in calibrating and testing IDS           #
-#  manufactured cameras and software.                                       #
-#                                                                           #
-#===========================================================================#
+def get_space(row:list):
+    """
+    Calculates the distance between consecutive points in a row and returns the minimum distance.
+    """
+    distances = []
+    for i in range(len(row)):
+        if i == (len(row)-1):
+            break
+        distance = row[i+1][0] - row[i][0]
+        distances.append(distance)
+    min(distances)
+    return distance
 
-# Developer Note: I tried to let it as simple as possible.
-# Therefore there are no functions asking for the newest driver software or freeing memory beforehand, etc.
-# The sole purpose of this program is to show one of the simplest ways to interact with an IDS camera via the uEye API.
-# (XS cameras are not supported)
-#---------------------------------------------------------------------------------------------------------------------------------------
+def check_row(row, space, max_len, x_min, x_max):
+    """
+    Checks a row of points and adds additional points to ensure that the spacing between consecutive points is
+    approximately equal to a specified value.
 
-#---------------------------------------------------------------------------------------------------------------------------------------
+    Arguments:
+    row -- list of (x,y) coordinate tuples representing the points in the row
+    space -- the desired spacing between consecutive points
+    max_len -- the maximum number of points that the row can contain
+    x_min -- the minimum x-value that a point in the row can have
+    x_max -- the maximum x-value that a point in the row can have
+    """
+    #print("----------------------------------------------- new row ---------------------------------------")
+    # Creating empty lists to store points and spaces
+    space_list=[]
+    point_list=[]
+    skip = False
+    for i in range(len(row)):
+        # Checking if the current point is the first point
+        if i ==0:
+             # If the point is too far from the left edge of the graph, insert a new point
+            if row[i][0] > x_min*1.5:
+            # If the point is too far from the right edge of the graph, insert a new point to the right of it
 
-    """This function returns an image taken by the IDS camera connected.
+                ##print("insert at i=0")                
+                new_point = [(row[i][0]-space), row[i][1]]
+                new_row = [new_point]
+                new_row.append(row)
+                row = new_row
+                if len(row) == max_len:
+                    #print( "break max len")
+                    break
+                else:
+                    continue
+        # Checking if the current point is the last point
+        if i == (len(row)-1) and len(row)!=max_len:
+            ##print("insert at last position", row[i][0])
+            x_point = row[i][0]
+            if abs(x_max - x_point) > space*0.5:
+                new_point = [(x_max), row[i][1]]
+                row.insert(i+1, new_point)
+                
+            if len(row) == max_len:
+                    #print( "break max len")
+                    break
+            else:
+                # If the row is not at the maximum length, control the spaces and add new points if necessary
+                row = control_rows(row, point_list, space_list, max_len)
+                
+                break
+        # Checking if there is a gap between the current point and the next point (insecure spaces)
+        if row[i+1][0]-row[i][0] > (space*1) and row[i+1][0]-row[i][0] <= (space*1.6):
+            #print("add insecure point at",  i, " position", row[i][0])
+            new_point = [(row[i][0]+space), row[i][1]] # calculate the new point to insert
+            point_list.append(new_point)
+            space_list.append(row[i+1][0]-row[i][0])
+            continue
+
+        # Checking if the spacing between the current point and the next point is too large
+        if row[i+1][0]-row[i][0] > (space*1.6):
+            # Adding a new point between the current point and the next point to reduce the spacing
+            
+            #print("insert at",  i, " position", row[i][0])
+            new_point = [(row[i][0]+space), row[i][1]]
+            row.insert(i+1, new_point)
+            skip = True
+            # Checking if the row has reached the maximum length
+            if len(row) == max_len:
+                    #print( "break max len")
+                    break
+            else:
+                continue
+        if i == range(len(row)):
+            #print("last control of row")
+            row = control_rows(row, point_list, space_list, max_len)
+    # Checking if the row has reached the maximum length
+    
+    while len(row) < 20:
+        row = check_row(row, space, max_len, x_min, x_max) 
+
+
+    new_row = Sort_x(row)
+    #print("new_row", new_row)
+    return row
+
+def control_rows(row, point_list, space_list, max_len):
+    """
+    This function is called if the number of circles on a row does not match the `max_len`.
+    It tries to fill the row with missing circles by one of the following ways:
+    1- using a list of circles `point_list` if there is the same number of missing circles and circles in the list.
+    2- by choosing the largest spaces in the row and placing new circles in the middle of these spaces.
+    3- by placing new circles at equal distances in the row to fill the gaps.
+    The function takes four arguments:
+    - `row`: a list of tuples, each tuple contains the x and y coordinates of a circle center in the row.
+    - `point_list`: a list of tuples, each tuple contains the x and y coordinates of a circle center.
+    - `space_list`: a list of integers, each integer represents the space between two circles in `row`.
+    - `max_len`: the maximum number of circles in `row`.
+    The function returns a new list of tuples, each tuple contains the x and y coordinates of a circle center.
+    """
+    #print("point_list" ,point_list)
+
+    # initialize a new list to store the corrected row
+    corrected_row = row
+    #print("starting control rows")
+    #print("space_list", space_list)
+
+    # calculate the number of missing circles
+
+    num_missing_circles = max_len - len(row)
+    #print("num_missing_circles", num_missing_circles)
+
+    # if there are missing circles
+    if num_missing_circles !=0:
+        # if the number of missing circles is equal to the number of circles in the list, add them directly
+        if num_missing_circles == len(point_list):
+            #print("missing = num insecure")
+            for point in range(len(point_list)):
+                new_point = point_list[point]
+                corrected_row.append(new_point)
+                num_missing_circles -=1
+        # if the number of missing circles is not equal to the number of circles in the list
+
+        else: 
+            #print("missing != num insecure")
+            for point in range(len(point_list)):
+                # find the largest space in the row and place a new circle in the middle of it
+                max_space = max(space_list)
+                index_max_space = space_list.index(max_space)
+                corrected_row.append(point_list[index_max_space])
+                del point_list[index_max_space]
+                del space_list[index_max_space]
+                num_missing_circles -= 1
+                # if the row has reached the maximum length, stop adding new circles
+
+                if len(row)==max_len:
+                    #print( "break max len")
+                    break
+                # otherwise, continue adding new circles
+
+                else:
+                    continue
+                
+    # if there are still missing circles, place additional circles until the max_length is archieved. (begins with biggest space)
+    missing_circles = False
+    if num_missing_circles != 0:
+        spaces = []
+        #print("test_row", row)
+        for i in range(len(row)-2):
+            #print("space: ", int(row[i][0]), "-", int(row[i+1][0]))
+            spaces.append(abs(int(row[i][0])-int(row[i+1][0])))
+
+        for i in range(num_missing_circles):
+            #print("spaces", spaces)
+            max_space = max(spaces)
+            space_index = spaces.index(max_space)
+            #print("row[space_index][0]", row[space_index][0])
+            #print("max_space" , max_space)
+            #print("int(row[space_index][0])+ 0.5*max_space", int(row[space_index][0])+ 0.5*max_space)
+            new_point = [int(row[space_index][0])+ 0.5*max_space,row[space_index][1]]
+            row.insert(i+1, new_point)
+            del spaces[space_index]
+            num_missing_circles -= 1
+            #print(" new_num_missing", num_missing_circles)
+            if num_missing_circles ==0:
+                missing_circles = False
+                break
+            if len(spaces) == 0:
+                break
+        #print("filled grid with plan c")
+
+        
+            
+    return row
+            
+def Sort_y(sub_li):
+    """
+    This function sorts a list of points based on their y-coordinates in ascending order.
 
     Args:
-        exposure_ms (int, optional): Eposure time, higher results in brighter image.The maximum of 40 ist limited by the framrate. Defaults to 20.
-        debug (bool, optional): Debug option to get information. Defaults to False.
+    sub_li: A list of points, where each point is represented as a list [x, y].
 
     Returns:
-        np.ndarray: Returns the image as np array.
-    """    
-    #Variables
-    hCam = ueye.HIDS(0)             #0: first available camera;  1-254: The camera with the specified camera ID
-    sInfo = ueye.SENSORINFO()
-    cInfo = ueye.CAMINFO()
-    pcImageMemory = ueye.c_mem_p()
-    MemID = ueye.int()
-    rectAOI = ueye.IS_RECT()
-    pitch = ueye.INT()
-    nBitsPerPixel = ueye.INT(24)    #24: bits per pixel for color mode; take 8 bits per pixel for monochrome
-    m_nColorMode = ueye.INT(1)		# Y8/RGB16/RGB24/REG32
-    bytes_per_pixel = int(nBitsPerPixel / 8)
+    A sorted list of points based on their y-coordinates.
+    """
+    l = len(sub_li)
+    for i in range(0, l):
+        for j in range(0, l-i-1):
+            if (sub_li[j][1] > sub_li[j + 1][1]):
+                tempo = sub_li[j]
+                sub_li[j]= sub_li[j + 1]
+                sub_li[j + 1]= tempo
+    return sub_li
 
-    #---------------------------------------------------------------------------------------------------------------------------------------
-    if debug:
-        print("START")
+def Sort_x(sub_li):
+    """
+    This function sorts a list of points based on their x-coordinates in ascending order.
 
-    # Starts the driver and establishes the connection to the camera
-    nRet = ueye.is_InitCamera(hCam, None)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_InitCamera ERROR")
+    Args:
+    sub_li: A list of points, where each point is represented as a list [x, y].
 
-    # Reads out the data hard-coded in the non-volatile camera memory and writes it to the data structure that cInfo points to
-    nRet = ueye.is_GetCameraInfo(hCam, cInfo)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_GetCameraInfo ERROR")
+    Returns:
+    A sorted list of points based on their x-coordinates.
+    """
 
-    # You can query additional information about the sensor type used in the camera
-    nRet = ueye.is_GetSensorInfo(hCam, sInfo)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_GetSensorInfo ERROR")
+    l = len(sub_li)
+    for i in range(0, l):
+        for j in range(0, l-i-1):
+            if (sub_li[j][0] > sub_li[j + 1][0]):
+                tempo = sub_li[j]
+                sub_li[j]= sub_li[j + 1]
+                sub_li[j + 1]= tempo
+    return sub_li
 
-    nRet = ueye.is_ResetToDefault( hCam)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_ResetToDefault ERROR")
+def closest(colors,color):
+    """
+    This function returns the color in the list 'colors' that is closest to the color 'color'.
 
-    # Set display mode to DIB
-    nRet = ueye.is_SetDisplayMode(hCam, ueye.IS_SET_DM_DIB)
+    Args:
+    colors: A list of colors, where each color is represented as a list [r, g, b].
+    color: A color to be compared to the colors in the 'colors' list, represented as a list [r, g, b].
 
-    # Set the right color mode
-    if int.from_bytes(sInfo.nColorMode.value, byteorder='big') == ueye.IS_COLORMODE_BAYER:
-        # setup the color depth to the current windows setting
-        ueye.is_GetColorDepth(hCam, nBitsPerPixel, m_nColorMode)
-        bytes_per_pixel = int(nBitsPerPixel / 8)
-        if debug:   
-            print("IS_COLORMODE_BAYER: ", )
-            print("\tm_nColorMode: \t\t", m_nColorMode)
-            print("\tnBitsPerPixel: \t\t", nBitsPerPixel)
-            print("\tbytes_per_pixel: \t\t", bytes_per_pixel)
-            print()
+    Returns:
+    The color in the 'colors' list that is closest to the 'color' parameter, represented as a list [r, g, b].
+    """
+    colors = np.array(colors)
+    color = np.array(color)    
+    distances = np.sqrt(np.sum((colors-color)**2,axis=1))    
+    index_of_smallest = np.where(distances==np.amin(distances))
+    smallest_distance = colors[index_of_smallest]
+    return smallest_distance 
 
-    elif int.from_bytes(sInfo.nColorMode.value, byteorder='big') == ueye.IS_COLORMODE_CBYCRY:
-        # for color camera models use RGB32 mode
-        m_nColorMode = ueye.IS_CM_BGRA8_PACKED
-        nBitsPerPixel = ueye.INT(32)
-        bytes_per_pixel = int(nBitsPerPixel / 8)
-        if debug:
-            print("IS_COLORMODE_CBYCRY: ", )
-            print("\tm_nColorMode: \t\t", m_nColorMode)
-            print("\tnBitsPerPixel: \t\t", nBitsPerPixel)
-            print("\tbytes_per_pixel: \t\t", bytes_per_pixel)
-            print()
+def get_average_color(point:list, im:np.ndarray):
+    """
+    This function returns the name of the most common color of a region of pixels around a point.
 
-    elif int.from_bytes(sInfo.nColorMode.value, byteorder='big') == ueye.IS_COLORMODE_MONOCHROME:
-        # for color camera models use RGB32 mode
-        m_nColorMode = ueye.IS_CM_MONO8
-        nBitsPerPixel = ueye.INT(8)
-        bytes_per_pixel = int(nBitsPerPixel / 8)
-        if debug:
-            print("IS_COLORMODE_MONOCHROME: ", )
-            print("\tm_nColorMode: \t\t", m_nColorMode)
-            print("\tnBitsPerPixel: \t\t", nBitsPerPixel)
-            print("\tbytes_per_pixel: \t\t", bytes_per_pixel)
-            print()
+    Args:
+    point: The coordinates of the center of the region of pixels, represented as a list [x, y].
+    im: The image that contains the region of pixels.
 
-    else:
-        # for monochrome camera models use Y8 mode
-        m_nColorMode = ueye.IS_CM_MONO8
-        nBitsPerPixel = ueye.INT(8)
-        bytes_per_pixel = int(nBitsPerPixel / 8)
-        print("else")
-
-    # Can be used to set the size and position of an "area of interest"(AOI) within an image
-    nRet = ueye.is_AOI(hCam, ueye.IS_AOI_IMAGE_GET_AOI, rectAOI, ueye.sizeof(rectAOI))
-    if nRet != ueye.IS_SUCCESS:
-        print("is_AOI ERROR")
-    width = rectAOI.s32Width
-    height = rectAOI.s32Height
-
-    # Prints out some information about the camera and the sensor
-    if debug:
-        print("Camera model:\t\t", sInfo.strSensorName.decode('utf-8'))
-        print("Camera serial no.:\t", cInfo.SerNo.decode('utf-8'))
-        print("Maximum image width:\t", width)
-        print("Maximum image height:\t", height)
-        print()
-
-    #set lower framerate to have more time for exposure
-    new_framerate = ueye.c_double(10)
-    nRet = ueye.is_SetFrameRate(hCam, new_framerate, ueye.c_double(0))
-    if nRet != ueye.IS_SUCCESS:
-        print("is_SetFrameRate ERROR")      
-
-
-
-    #setting the exposure time 0-40ms at 25fps which is standard
-    new_exposure = ueye.c_double(exposure_ms)
-    nRet = ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_SET_EXPOSURE, new_exposure, 8)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_SetExposure ERROR")
-
-    #getting the exposure time
-    realExp = ueye.c_double()
-    ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_GET_EXPOSURE, realExp, 8)
-    if debug:
-        print ('Exposure time used:', realExp)
-
-    #---------------------------------------------------------------------------------------------------------------------------------------
-
-    # Allocates an image memory for an image having its dimensions defined by width and height and its color depth defined by nBitsPerPixel
-    nRet = ueye.is_AllocImageMem(hCam, width, height, nBitsPerPixel, pcImageMemory, MemID)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_AllocImageMem ERROR")
-    else:
-        # Makes the specified image memory the active memory
-        nRet = ueye.is_SetImageMem(hCam, pcImageMemory, MemID)
-        if nRet != ueye.IS_SUCCESS:
-            print("is_SetImageMem ERROR")
-        else:
-            # Set the desired color mode
-            nRet = ueye.is_SetColorMode(hCam, m_nColorMode)
-
-    # Activates the camera's live video mode (free run mode)
-    nRet = ueye.is_CaptureVideo(hCam, ueye.IS_DONT_WAIT)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_CaptureVideo ERROR")
-
-    # Enables the queue mode for existing image memory sequences
-    nRet = ueye.is_InquireImageMem(hCam, pcImageMemory, MemID, width, height, nBitsPerPixel, pitch)
-    if nRet != ueye.IS_SUCCESS:
-        print("is_InquireImageMem ERROR")
-    elif debug:
-        print("Press q to leave the programm")
-    ueye.is_WaitEvent(hCam, ueye.IS_SET_EVENT_WB_FINISHED, 100)
-
-    #---------------------------------------------------------------------------------------------------------------------------------------
-    # In order to display the image in an OpenCV window we need to...
-    # ...extract the data of our image memory
-    array = ueye.get_data(pcImageMemory, width, height, nBitsPerPixel, pitch, copy=False)
-
-    # ...reshape it in an numpy array...
-    frame = np.reshape(array,(height.value, width.value, bytes_per_pixel))
+    Returns:
+    The name of the most common color of the region of pixels around the point.
+    """
+    # Create empty lists to store the pixel colors and color names
+    colors = []
+    colors_name =[]
+    # Define a list of colors that we want to detect
+    list_of_colors = [[0,0,255],[0,255,0],[255,0,0],[255,255,0]]
     
-    # Releases an image memory that was allocated using is_AllocImageMem() and removes it from the driver management
-    ueye.is_FreeImageMem(hCam, pcImageMemory, MemID)
+     # Iterate over a 2x2 region of pixels centered around the given point
+    for i in range(2):
+        for z in range(2):
+            # Get the color of the pixel at the given coordinates
+            # and append it to the list of colors
+            print(round(point[1]+i), round(point[0]+z))
+            color = im[round(point[1]+i), round(point[0]+z)]
+            colors.append(color)
+            print(round(point[1]-i), round(point[0]-z))
+            color = im[round(point[1]-i), round(point[0]-z)]
+            colors.append(color)
+    # Find the name of the closest color for each pixel color in the region
 
-    # Disables the hCam camera handle and releases the data structures and memory areas taken up by the uEye camera
-    ueye.is_ExitCamera(hCam)
+    for i in range(len(colors)):         
+        closest_color = closest(list_of_colors,colors[i])        
+        colors_name.append(webcolors.rgb_to_name((closest_color[0][0],  closest_color[0][1],  closest_color[0][2])))
+     # Use the Counter class to count the occurrences of each color name
+    data = Counter(colors_name)    
+    return data.most_common(1)[0][0]
 
-    return frame
+def get_matrix(image, circles):
+    """
+    A function that generates a matrix of colors from an input image
+    based on the locations of circular regions of interest (ROIs)
+    represented by the input circles.
+    
+    Args:
+    - image: An input image as a numpy array
+    - circles: A list of circles, where each circle is a tuple (x, y, r)
+    representing the center coordinates (x, y) and radius (r) of a circular ROI
+    
+    
+    Returns:
+    - color_name_grid: A 2D list representing the generated matrix of colors
+    - cutted_grids: A 2D list representing the generated matrix of circular ROIs
+    
+    """
+    # Sort the circles by y-coordinate
+    sort_circles = Sort_y(circles)
+    #print("len_sort_Y:", len(sort_circles))
+    old_height = sort_circles[0][1]
+    # Group circles into rows based on y-coordinate proximity
+    grids = []
+    rows = []  
+
+    for i in range(len(sort_circles)):
+            height = sort_circles[i][1]
+            
+            if (height-old_height) < (20):
+                rows.append(sort_circles[i])
+            else:                
+                grids.append(rows)
+                rows = []
+                rows.append(sort_circles[i])
+                old_height = height
+    grids.append(rows)
+    #print("len_grids:", len(grids))
+    # Sort circles in each row by x-coordinate
+    for row in grids:
+        row = Sort_x(row)
+    # Find the maximum number of circles in any row
+    list_len = [len(row) for row in grids]
+    max_len =max(list_len)
+
+    # Find the minimum x-coordinate of any circle
+    x_min = 1000000000000
+
+    for row in grids:
+        for point in row:
+            if point[0] < x_min:
+                x_min = point[0]
+    # Find the maximum x-coordinate of any circle
+    x_max = 0
+    for row in grids:
+        for point in row:
+            if point[0] > x_max:
+                x_min = point[0]
+    # Check if any row has fewer circles than the maximum number of circles
+    # and add additional circles if necessary to create a rectangular grid
+    index = 0
+    for row in grids:
+        space = get_space(row)
+        #print("len_row", len(row))
+        if len(row)<max_len:
+            #print("start cutting")
+            #print("row:", index)
+            #print("old_row:", row)
+            row = check_row(row, space, max_len, x_min, x_max)
+            #print("new_len ", len(row))
+            #print("new_row:", row)
+        index += 1
+    fixed_grids = grids
+    cutted_grids = fixed_grids
+    # Convert input image to RGB color space and adjust contrast/brightness if requested
+    #im = cv2.cvtColor(image ,cv2.COLOR_BGR2RGB)
+    # if matrix_Type == "image":
+    #     alpha = 1 # Contrast control
+    #     beta = 50 # Brightness control
+    #     im = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+        
+    # Generate a matrix of colors by averaging the color values within each circle
+
+    color_name_grid = []
+    i = 0
+    
+    index = 0
+    for row in grids: #cutted_grids  
+       # print("index", index) 
+        color_name_row = []
+       # print("im_shape:", len(im), len(im[0]))
+        for point in row:  
+            #alternative color detection    
+            #color = get_average_color(point, im)  
+            color = get_color_of_roi(point, image)        
+            color_name_row.append(color)        
+        color_name_grid.append(color_name_row)
+        index += 1
+    #print("color_name_grid", color_name_grid)
+    #for row in color_name_grid:
+        #print("len color row:", len(row))
+    return color_name_grid, cutted_grids
+
+def get_similarity(picture_grid, plan_grid, plan_position_grid):
+    """
+    Given a picture grid, a plan grid, and a plan position grid, this function finds the best position and orientation
+    for the plan grid within the picture grid such that the two grids have the highest possible similarity.
+
+    Args:
+        picture_grid (list): A list of lists representing the picture grid. Each element in the list is a color code.
+        plan_grid (list): A list of lists representing the plan grid. Each element in the list is a color code.
+        plan_position_grid (list): A list of lists representing the position of the plan grid. Each element in the list 
+            is a tuple representing the x and y coordinates of the corresponding element in the plan grid.
+
+    Returns:
+        A tuple containing the similarity score, the x and y coordinates of the top left corner of the best matching 
+        region of the plan grid in the picture grid, the plan position grid after any necessary rotations, and the 
+        similarity scores for all positions and rotations(comp_list).
+
+    """
+    # Initialize variables to hold the best matching position and orientation for the plan grid within the picture grid
+
+    best_comp_list = []
+    best_max_similarity = 0
+    best_index_x = 0
+    best_index_y = 0
+    best_rotated_grid = []
+    best_rotated_plan_position_grid = []
+    rotation = [0, 90, 180, 270]
+
+    # Convert the plan grid and plan position grid to numpy arrays for easier manipulation
+    rotated_plan_grid = np.array(plan_grid)    
+    rotated_plan_position_grid = np.array(plan_position_grid)
+    # Try all possible rotations of the plan grid to find the best matching position and orientation
+
+    for degree in rotation:
+        # Rotate the plan grid clockwise and plan position grid by the specified degree
+        comp_list = []
+
+        #only aplly rotation if degree is not 0
+        if degree != 0:
+            rotated_plan_grid = np.rot90(rotated_plan_grid,degree/90,axes=(1,0))
+            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,degree/90,axes=(1,0))
+           
+        #Add padding to the picture grid to ensure that the folding result is the same shape as the picture grid originally
+        padded_matrix = add_padding(rotated_plan_grid, picture_grid,debug=False)
+
+        # Get the dimensions of the rotated plan grid and the difference between the dimensions of the picture grid and
+        # the rotated plan grid
+        row_plan = len(rotated_plan_grid)
+        column_plan = len(rotated_plan_grid[0])
+
+        row_pic= len(padded_matrix)
+        column_pic = len(padded_matrix[0])
+
+        row_diff = row_pic - row_plan +1
+        column_diff = column_pic  - column_plan +1
+        # Iterate over all possible positions of the rotated plan grid within the picture grid
+
+        for row_comp in range(row_diff):
+            comp_row_list = []
+            for column_comp in range(column_diff):
+                number_of_same_colors = 0
+                # Calculate the similarity score for the current position by comparing the color codes of each element in
+                # the plan grid and the corresponding element in the picture grid
+                
+                for i in range(len(rotated_plan_grid)):
+                    
+                    for z in range(len(rotated_plan_grid[i])):
+                        plan_color = rotated_plan_grid[i][z]
+                        pic_color = padded_matrix[i+row_comp][z+column_comp]
+                        if plan_color == pic_color:
+                            number_of_same_colors +=1
+                #print(number_of_same_colors)
+                
+                comp_row_list.append(number_of_same_colors)
+                
+                    
+            comp_list.append(comp_row_list)
+
+        # Get the maximum similarity score and the corresponding position of the rotated plan grid within the picture grid       
+        max_similarity, index_x,  index_y = get_max_value(comp_list)
+        #print('rotation is', degree,)
+        #print("best_max_similarity", max_similarity,'\n')
+       
+        if max_similarity > best_max_similarity:
+            rotation_with_best_similarity = degree
+            best_max_similarity = max_similarity
+            best_index_x = index_x
+            best_index_y = index_y
+            best_comp_list = comp_list
+            best_rotated_grid = rotated_plan_grid
+            best_rotated_plan_position_grid = rotated_plan_position_grid
+        
+        # print("best_max_similarity", best_max_similarity)
+        # print('rotation is', degree,'\n')
+
+    #print("best_rot_grid", best_rotated_grid)
+    #print("best_max_similarity", best_max_similarity)
+    #print('rotation_with_best_similarity', rotation_with_best_similarity)
+    total_pixel = len(best_rotated_grid) * len(best_rotated_grid[0])
+    #print("best index x y", best_index_x, best_index_y)
+    #print("index x y in image", best_index_x+round(0.5*len(best_rotated_grid[0]))-1,best_index_y+round(0.5*len(best_rotated_grid))-1 )
+    #print("pos_index",index_x,  index_y) 
+    similarity = (best_max_similarity/total_pixel)*100
+    # -1 is because the index starts from 0 but in the real picture, the index starts from 1 which is added in detect_matching_template
+    im_index_x = best_index_x-1
+    im_index_y = best_index_y-1
+   
+    # im_index_x = best_index_x+round(0.5*len(best_rotated_grid[0]))-1
+    # im_index_y = best_index_y+round(0.5*len(best_rotated_grid))-1
+    return similarity, im_index_x, im_index_y, best_rotated_plan_position_grid, best_comp_list, rotation_with_best_similarity
+
+def get_max_value(comp_list):
+    """
+    Given a comparison list, find the maximum value and its corresponding indices.
+
+    Parameters:
+    comp_list (list of lists): The comparison list to search through.
+
+    Returns:
+    max_value (float or int): The maximum value found in the list.
+    x (int): The row index where the maximum value was found.
+    y (int): The column index where the maximum value was found.
+    """
+    x = 0
+    y = 0
+    max_value = 0
+    current_x = 0
+# Iterate through each row in the comparison list.
+    for row in comp_list:
+        row_max = max(row)
+        # If the maximum value in the current row is greater than the maximum value found so far,
+        # update the maximum value and the indices where it was found.
+        if row_max > max_value:
+            max_value = row_max
+            x = current_x
+            y = row.index(max_value)
+        
+        current_x += 1# Increment the current row index.
+        
+    return max_value, x,  y
+    
+def open_saved_matrix(path):
+    """
+    This function opens a all available templates and returns a list of matrices containing plan positions and colors for each step of each template.
+
+    Returns:
+    - template_matrix_list: a list of matrices containing plan positions and colors for each step of each template. 
+    - template_name_list: a list of strings containing names of each step of each template.
+    """
+    
+    dir_list = os.listdir(path)
+    template_matrix_list = []
+    template_name_list = []
+    
+    # Iterate over directories in the template path
+    for dir in dir_list:
+        # Check if the file is a json file
+        for file in os.listdir(path  +  "/" + dir):
+            if ".json" in os.path.basename(file):
+                template_specific_matrix =[]
+                with open(path  +  "/" + dir + "/" +file, 'r') as openfile:
+                    json_object = json.load(openfile)
+                template_all_steps_matrix =  []
+                template_all_steps_name =[]
+                # Iterate over each step of the template
+                for i in range(len(json_object)):
+                    template_step_matrix = []
+                    # Add the matrix of plan positions and colors for each step to a list
+
+                    template_step_matrix.append(json_object[i]["step " + str(i+1) + " positions"])
+                    template_step_matrix.append(json_object[i]["step " + str(i+1) + " colors"])
+                    # Append the name of each step to a list
+                    template_all_steps_name.append(os.path.splitext(file)[0] + " step " + str(i+1))
+                    template_all_steps_matrix.append(template_step_matrix)
+                # Append the list of matrices of each template to a list
+                template_matrix_list.append(template_all_steps_matrix)
+                # Append the list of names of each step of each template to a list
+
+                template_name_list.append(template_all_steps_name)
+
+    return template_matrix_list, template_name_list
+
+def detect_matching_template(image,detected_circles_list, template_matrix_list, template_name_list):
+    """
+    Detects a matching template from the provided list of template matrices for a given input image.
+
+    Parameters:
+    image (numpy.ndarray): The extracted lego plate image as a NumPy array.
+    template_matrix_list (list): The list of template matrices.
+    template_name_list (list): The list of names of the templates.
+
+    Returns:
+    numpy.ndarray: The rotated input image.
+    str: The name of the template that matches the input image.
+    list: The position of each cell in the matrix of the input image.
+    list: The position of each cell in the matched template.
+    int: The x-coordinate of the matched template's top-left corner in the input image.
+    int: The y-coordinate of the matched template's top-left corner in the input image.
+    float: The similarity between the input image and the matched template.
+    list: A list of dictionaries containing comparison data between the input image and the matched template.
+    """
+   
+    
+    # Extract matrix from the lego plate and the uncomplete circles list
+    matrix_image, matrix_image_position= get_matrix(image, detected_circles_list)
+
+    # Extract the color matrix from the image and create a visualisation
+    color_matrix = display_lego_pattern(matrix_image)
+    # Initialize variables to keep track of best match
+    current_max_similarity = 0
+    current_max_index_x = 0 
+    current_max_index_y = 0
+    current_max_template_index = 0
+    current_max_step_index = 0
+    rotation_with_best_similarity = 0
+    current_plan_position_grid = []
+
+    template_index = 0
+    step_index = 0
+    # Loop over all templates and their steps
+    for template in template_matrix_list:
+        step_index = 0
+        for step_both_matrixs in template:
+            # Extract position and color matrices for the current step
+            step_position_matrix = step_both_matrixs[1]
+            step_color_matrix = step_both_matrixs[0]
+            # Compute similarity between the image matrix and the current template step
+            similarity, index_x, index_y, rotated_plan_position_grid, comp_list,rotation= get_similarity(matrix_image,step_position_matrix, step_color_matrix)
+           
+            #print('similarity in %', similarity)
+            #print('rotation', rotation)
+            template_name = template_name_list[template_index][step_index]
+            #print("template_name:", template_name,'\n')
+
+            # Update the best match if the current similarity is higher than the previous max
+            if similarity > current_max_similarity:
+                current_max_similarity = similarity
+                current_max_index_x = index_x
+                current_max_index_y = index_y
+                current_max_template_index = template_index
+                current_max_step_index = step_index
+                current_plan_position_grid = rotated_plan_position_grid
+                rotation_with_best_similarity = rotation
+            # print('current_max_similarity in %', current_max_similarity)
+            # print('rotation_with_best_similarity', rotation_with_best_similarity)
+            # template_name = template_name_list[current_max_template_index][current_max_step_index]
+            # print("template_name:", template_name,'\n')
+
+            
+            step_index +=1
+        template_index +=1
+
+    # Print some debug information
+    print("end templ pos x, y in picture", current_max_index_x+1, current_max_index_y+1)
+    template_name = template_name_list[current_max_template_index][current_max_step_index]
+    print("template_name:", template_name)
+    print("similarity", current_max_similarity)
+    print("rotation:", rotation_with_best_similarity)
+    return color_matrix, template_name,  matrix_image_position, current_plan_position_grid, current_max_index_x, current_max_index_y, current_max_similarity, comp_list,rotation_with_best_similarity
+
+def higlight_target(image, image_position_matrix, template_position_matrix, index_x, index_y):
+    """
+    Given an input image, highlight the area of the target specified by its position in the image matrix.
+
+    Args:
+    - image: the input image of the extracted lego plate
+    - image_position_matrix: the matrix of positions of the image pixels
+    - template_position_matrix: the matrix of positions of the target pixels
+    - index_x: the x-index of the target in the image matrix
+    - index_y: the y-index of the target in the image matrix
+
+    Returns:
+    - highlighted_image: the input image with the target area highlighted
+
+    """
+    #print("template_position_matrix: amount of circles ", len(template_position_matrix[0]), len(template_position_matrix[1]))
+    # Initialize variables to compute the gaps and rests between the target and the image pixels
+
+    rest_x = 0
+    rest_y = 0
+
+    # Compute the gap and rest for the y-dimension (center of two circles)
+    gab_x= 0
+    gab_y= 0
+    if (len(template_position_matrix[1])%2) == 0:
+        y1 = image_position_matrix[0][0][1]
+        y2 = image_position_matrix[-1][0][1]    
+        len_y = len(image_position_matrix)-1
+        #print("y1, y2, len_y",  y1, y2, len_y)
+        gab_y = (y2 - y1)/len_y
+        rest_y = 0.5 * gab_y
+    # Compute the gap and rest for the x-dimension
+    if len(template_position_matrix[0])%2 == 0:
+        x1 = image_position_matrix[0][0][0]
+        x2 = image_position_matrix[0][-1][0]    
+        len_x = len(image_position_matrix[0])-1
+        #print("x1, x2, len_y",  x1, x2, len_x)
+        gab_x = (x2 - x1)/len_x
+        rest_x = 0.5 * gab_x
+    #print("index x, y", index_x, index_y)
+    # Compute the pixel position of the target
+    position = image_position_matrix[index_x][index_y]
+    i = 0
+    for row in image_position_matrix:
+        #print("line", i, row)
+        i +=1
+    #print("position" , position)
+    #print('rest_x, rest_y:', rest_x,   rest_y)
+    x = int(round(position[0])+rest_x)
+    y = int(round(position[1])+rest_y)
+    #print ('x, y:', x,   y)
+    #print("x, y:", x,   y)
+     # Compute the length of the target in the y- and x-dimensions
+    template_legnth_y = gab_y * int(round(0.5*len(template_position_matrix)))
+    template_legnth_x = gab_x * int(round(0.5*len(template_position_matrix[0])))
+    #print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
+# Compute the start and end points of the target area in the image
+    start_point_y = int(y -  template_legnth_y)
+    start_point_x = int(x -  template_legnth_x)
+    #print("start_point_y,start_point_x", start_point_y,start_point_x)
+
+    end_point_x = int(x +  template_legnth_x)
+    end_point_y = int(y +   template_legnth_y)
+     # Highlight the target area in the image with a rectangle and a circle
+    #print("end_point_y,end_point_x", end_point_y,end_point_x)
+    highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 5)
+    highlighted_image = cv2.circle(image, (x,y), 3, (0, 255, 0), 2)
+    return highlighted_image
+
+def safe_new_matrix(template_name:str,longest_side:int):
+    """
+    This function saves the position and color matrices of
+    each image in the directory list as JSON files in the given directory. 
+
+    Args:
+    - template_name (str): The name of the template to be created.
+    - longest_side (int): The expected number of circles to be detected along the longest side of the image.
+
+    Returns:
+    - None
+
+    Raises:
+    - None
+    """
+    # Initialize variables and create the new directory
+    plan_index = 0
+    json_data = []
+    dir_list = []
+    id_list = []
+    folder_path = 'Templates/'+template_name
+
+    #create the directory list and id list sorted by filename
+    for filename in os.listdir(folder_path):
+         #if no number is present in filename then skip the file because it is not a plan
+         if any(char.isdigit() for char in filename):
+            dir_list.append(folder_path + "/" + filename)
+            #extract id from filename, only numbers are allowed
+            id_list.append(int(''.join(filter(str.isdigit, filename))))
+          
+    dir_list.sort()
+    id_list.sort()      
+            
+    try:
+        #iterate through the image files in the directory list
+        for dir in dir_list:
+            # Read the image and detect the circles
+            image = cv2.imread(dir)
+            circles_template, template_image = detect_circles(image,real_photo=False,expected_circles_per_longest_side=longest_side, debug=False)
+
+            # Extract the position and color matrices from the image
+            matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template)
+            position_matrix_name = "step " + str(id_list[plan_index]) + " positions"
+
+            # Convert the position matrix to integers
+            matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
+            color_matrix_name = "step " + str(id_list[plan_index]) + " colors"
+
+            # Store the matrices and their associated ids in a dictionary and append it to the JSON data list
+            json_data.append({position_matrix_name : matrix_plan_position, color_matrix_name: matrix_plan_color} )
+            plan_index += 1
+            # Save the image to the new directory
+            cv2.imwrite(folder_path + "/" +os.path.basename(dir), image)
+
+        # Save the JSON data to a file in the new directory
+        if os.path.exists(folder_path):
+            new_template_file = folder_path + "/" + template_name + ".json"    
+            if os.path.isfile(new_template_file):
+                print ("ERROR: File exists already")
+            else:
+                with open(new_template_file, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            print ("ERROR: Dir not existent")
+            return
+    except Exception as e:
+        print("ERROR in saving a new building: ", e)
+        return
