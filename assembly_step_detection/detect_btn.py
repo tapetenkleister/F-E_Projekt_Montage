@@ -67,5 +67,4 @@ with open('Images_Results/result.txt', 'w') as f:
     f.write(f' with '+str(max_similarity)+'%'+' similarity\n')
     f.write(f'Center position in x and y: '+str(index_x+1)+' '+str(index_y+1)+'\n')
     f.write(f'Rotation: '+str(rotation_with_best_similarity)+'°'+'\n')
-    #write time in ms and 2 decimal places after the comma
     f.write(f'Time needed for detection: '+str(round(duration*1000,2))+'ms'+'\n')
