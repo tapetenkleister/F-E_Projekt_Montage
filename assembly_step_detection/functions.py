@@ -117,7 +117,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False) ->np.ndar
     arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-    #assume image is somewhat center
+    #assume image is relatively centered
     h, w, _ = image.shape
     center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
@@ -230,7 +230,7 @@ def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12) ->str:
     Args:
         point (list): list of x and y coordinates
         image (np.ndarray): Image to sample from
-        sample_size (int, optional): Square region of interes with length of radius. Defaults to 12.
+        sample_size (int, optional): Square region of interest with twice length of sample_size. Defaults to 12.
 
     Returns:
         string: Name of the sampled color. Either yellow, red, blue or green.
@@ -1137,9 +1137,11 @@ def safe_new_matrix(template_name:str,longest_side:int):
 
     #create the directory list and id list sorted by filename
     for filename in os.listdir(folder_path):
-        dir_list.append(folder_path + "/" + filename)
-        #extract id from filename, only numbers are allowed
-        id_list.append(int(''.join(filter(str.isdigit, filename))))
+         #if no number is present in filename then skip the file because it is not a plan
+         if any(char.isdigit() for char in filename):
+            dir_list.append(folder_path + "/" + filename)
+            #extract id from filename, only numbers are allowed
+            id_list.append(int(''.join(filter(str.isdigit, filename))))
           
     dir_list.sort()
     id_list.sort()      
