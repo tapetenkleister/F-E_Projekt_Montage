@@ -86,6 +86,23 @@ def display_lego_pattern(matrix:np.ndarray)->np.ndarray:
     # Convert the color matrix to a 3D array of RGB values
     rgb_colors = np.array([[color_map[c] for c in row] for row in matrix])
 
+    # Upscale the image
+    factor = 50
+
+    # Define the circle radius and color
+    radius = factor//3
+
+    # upscale img by factor
+    upscaled_img = cv2.resize(rgb_colors, (rgb_colors.shape[0]*factor, rgb_colors.shape[1]*factor), interpolation=cv2.INTER_NEAREST)
+
+    #draw a circle each factor/2 pixels in the midlle of each factor*factor square
+    for i in range(0,upscaled_img.shape[0],factor):
+        for j in range(0,upscaled_img.shape[1],factor):
+            cv2.circle(upscaled_img, (i+factor//2, j+factor//2), radius, (0,0,0), 1)
+
+    #save the upscaled image to the rgb_colors variable        
+    rgb_colors = upscaled_img
+
     return rgb_colors
 
 def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False) ->np.ndarray:
