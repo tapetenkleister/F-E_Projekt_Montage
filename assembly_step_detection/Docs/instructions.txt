@@ -1,0 +1,29 @@
+
+
+
+
+Button "Detect assembly step" 
+
+By pressing the button the file detect_btn.py will be executed.
+This calls the individual functions to detect the assembly progress. 
+The photos saved by this are then displayed in the interface. 
+In the bottom right corner, the last completed assembly step is displayed. 
+
+Button "Take photo"
+
+By pressing the button the file take_image_btn is executed.
+This takes a picture with the IDS camera, saves it and then displays it on the interface. 
+
+Button "Save new template"
+
+With the help of the "Save new Template" button, a new component can be entered. 
+Templates of the individual construction steps must first be created using the free Stud.io software. 
+The templates show the individual construction steps as a top view. 
+The images of the individual construction steps must be numbered consecutively. 
+An overview image is also added to the folder as <TemplateName>_thumbnail.png. 
+As soon as the button is pressed, the user is prompted to enter the name of the new template. 
+It is important that the name is capitalized. 
+Next, the number of studs on the longest side of the structure must be provided. 
+Subsequently, a window opens where the folder with the templates is to be selected. 
+The photos from the selected folder will be copied to the newly created folder. 
+Finally, we call the save_new_matrix, which creates a .json file for the new template.

@@ -2,7 +2,6 @@ import os
 import cv2
 import sys
 import shutil
-import time
 import subprocess
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -11,6 +10,27 @@ from PyQt5.QtMultimedia import *
 from PyQt5.QtMultimediaWidgets import *
 
 from functions import *
+
+class Instructions(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initMe()
+        
+    def initMe(self):
+        self.setGeometry(100, 100, 3000, 2000)
+        self.setWindowTitle('Instructions')
+        
+        self.label = QLabel(self)
+        self.label.setText("Instructions")
+        self.label.setFont(QFont('Arial', 16))
+        #self.label.setGeometry(0,0, 1000, 50)
+        
+        self.text = QLabel(self)
+        instruction = open('Docs/instructions.txt','r')
+        # read the instructions from the file and show them in the message box
+        self.text.setText(instruction.read())
+        instruction.close()
+        self.show()
 
 class Fenster(QMainWindow):
 
@@ -221,15 +241,9 @@ class Fenster(QMainWindow):
     def show_instructions(self):
         """ This function shows the instructions how to use the application.
         """   
-        # create a message box     
-        info = QMessageBox()
-        info.setWindowTitle("Instruction")
-        instruction = open('Docs/instructions.txt','r')
-        # read the instructions from the file and show them in the message box
-        info.setText("This is the main text!" + "\n" + instruction.read())
-        instruction.close()
-        x = info.exec_()
-
+        self.instructions = Instructions()
+        self.instructions.show()
+        
 
     @pyqtSlot()    
     def detect_progress(self):
@@ -259,7 +273,6 @@ class Fenster(QMainWindow):
             detected_template = detected_assembly_step.split(' ')
             # change index of construction_plan to the detected template[0]
             self.construction_plan.setCurrentIndex(self.construction_plan.findText(detected_template[0]))
-
 
  
 if __name__ == '__main__':        
