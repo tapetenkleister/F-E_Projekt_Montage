@@ -1,10 +1,13 @@
 from functions import *
 import cv2 
 import time
+import sys
+
 
 #-----------------------------------------------------------
 #this function is called when the button is pressed to detect the assembly step
 #-----------------------------------------------------------
+#start the clock to measure the time needed for the detection
 start = time.time()
 try:
     #load the image taken with IDS camera if it is available otherwise print an error message
@@ -19,6 +22,10 @@ except Exception as e:
     cv2.imwrite('Images_Results/result.jpg', np.zeros((100,100,3), np.uint8))
     print('Error in extracting lego plate')
     print(e)
+    with open('Images_Results/result.txt', 'w') as f:
+        f.write(f'Something went wrong in extracting the plate. Make sure that 4 aruco markers are sharp and visible.\n')
+        f.write(f'Error: '+str(e)+'\n')
+        sys.exit()
 
 try:
     #detect circles in the extracted lego plate
@@ -31,6 +38,10 @@ except Exception as e:
     cv2.imwrite('Images_Results/result.jpg', np.zeros((100,100,3), np.uint8))
     print('Error in detecting circles')
     print(e)
+    with open('Images_Results/result.txt', 'w') as f:
+        f.write(f'Something went wrong in detecting circles on the extracted plate.\n')
+        f.write(f'Error: '+str(e)+'\n')
+        sys.exit()
 
 try:
     #read in all available templates of steps
@@ -47,6 +58,10 @@ except Exception as e:
     cv2.imwrite('Images_Results/result.jpg', np.zeros((100,100,3), np.uint8))
     print('Error in detecting matching template')
     print(e)
+    with open('Images_Results/result.txt', 'w') as f:
+        f.write(f'Something went wrong in detecting a matching template step.\n')
+        f.write(f'Error: '+str(e)+'\n')
+        sys.exit()
 
 try:
     #generate an image with the detected step in green frame
@@ -57,10 +72,15 @@ except Exception as e:
     cv2.imwrite('Images_Results/result.jpg', np.zeros((100,100,3), np.uint8))
     print('Error in highlighting the final result')
     print(e)
+    with open('Images_Results/result.txt', 'w') as f:
+        f.write(f'Something went wrong in highlighting the building in the result image.\n')
+        f.write(f'Error: '+str(e)+'\n')
+        sys.exit()
 
 #clock the time needed for the detection
 end = time.time()
 duration = end - start
+
 # write detected_assembly_step, position and rotation to a txt.file for examination
 with open('Images_Results/result.txt', 'w') as f:
     f.write(f'Detected assembly step: ' + detected_assembly_step+'\n')

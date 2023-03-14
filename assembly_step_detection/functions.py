@@ -429,7 +429,7 @@ def get_space(row:list):
             break
         distance = row[i+1][0] - row[i][0]
         distances.append(distance)
-    min(distances)
+    distance = min(distances)
     return distance
 
 def check_row(row, space, max_len, x_min, x_max):
