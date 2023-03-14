@@ -41,15 +41,7 @@ import sys
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 
-"""This function returns an image taken by the IDS camera connected.
-
-Args:
-    exposure_ms (int, optional): Eposure time, higher results in brighter image.The maximum of 40 ist limited by the framrate. Defaults to 20.
-    debug (bool, optional): Debug option to get information. Defaults to False.
-
-Returns:
-    np.ndarray: Returns the image as np array.
-"""    
+ 
 start = time.time()
 #Variables
 debug = False
@@ -149,11 +141,11 @@ try:
         print("Maximum image height:\t", height)
         print()
 
-    # #set lower framerate to have more time for exposure
-    # new_framerate = ueye.c_double(10)
-    # nRet = ueye.is_SetFrameRate(hCam, new_framerate, ueye.c_double(0))
-    # if nRet != ueye.IS_SUCCESS:
-    #     print("is_SetFrameRate ERROR")      
+    #set lower framerate to have more time for exposure
+    new_framerate = ueye.c_double(10)
+    nRet = ueye.is_SetFrameRate(hCam, new_framerate, ueye.c_double(0))
+    if nRet != ueye.IS_SUCCESS:
+        print("is_SetFrameRate ERROR")      
 
 
 
@@ -166,8 +158,8 @@ try:
     #getting the exposure time
     realExp = ueye.c_double()
     ueye.is_Exposure(hCam,ueye.IS_EXPOSURE_CMD_GET_EXPOSURE, realExp, 8)
-    if debug:
-        print ('Exposure time used:', realExp)
+
+    print ('Exposure time used:', realExp)
 
     #---------------------------------------------------------------------------------------------------------------------------------------
 
