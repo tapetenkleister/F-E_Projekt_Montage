@@ -50,6 +50,8 @@ try:
     #compare all templates by folding their color_matrix over the color_matrix of the image (rotation included)
     color_matrix, detected_assembly_step,  matrix_image_position, template_position_matrix, index_x, index_y, max_similarity, comp_list, rotation_with_best_similarity = detect_matching_template(extracted_lego_plate, detected_circles_list, template_matrix_list, template_name_list)
     color_matrix = color_matrix.astype(np.uint8)
+
+    #convert the color matrix to RGB for saving
     color_matrix = cv2.cvtColor(color_matrix, cv2.COLOR_RGB2BGR)
     cv2.imwrite('Images_Results/color_matrix.png',color_matrix)
 except Exception as e:
