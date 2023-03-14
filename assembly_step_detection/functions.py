@@ -1117,17 +1117,34 @@ def higlight_target(image, image_position_matrix, template_position_matrix, inde
     template_legnth_y = gab_y * int(round(0.5*len(template_position_matrix)))
     template_legnth_x = gab_x * int(round(0.5*len(template_position_matrix[0])))
     #print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
-# Compute the start and end points of the target area in the image
+    # Compute the start and end points of the target area in the image
     start_point_y = int(y -  template_legnth_y)
     start_point_x = int(x -  template_legnth_x)
     #print("start_point_y,start_point_x", start_point_y,start_point_x)
 
     end_point_x = int(x +  template_legnth_x)
     end_point_y = int(y +   template_legnth_y)
-     # Highlight the target area in the image with a rectangle and a circle
+
+    # Highlight the target area in the image with a rectangle and a circle
     #print("end_point_y,end_point_x", end_point_y,end_point_x)
     highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 5)
     highlighted_image = cv2.circle(image, (x,y), 3, (0, 255, 0), 2)
+
+    #add 100 black pixels on each side of the image
+    circumference = 75
+    highlighted_image = cv2.copyMakeBorder(highlighted_image, circumference, circumference, circumference, circumference, cv2.BORDER_CONSTANT, value=[0,0,0])
+
+
+    #add an arrow as x axis on the top part of the image from left to right
+    highlighted_image = cv2.arrowedLine(highlighted_image, (40, 40), (image.shape[1]-80, 40), (0, 255, 0), 6, tipLength=0.04)
+
+    #add an arrow as y axis on the left part of the image from top to bottom    
+    highlighted_image = cv2.arrowedLine(highlighted_image, (40, 40), (40, image.shape[0]+30), (0, 255, 0), 6, tipLength=0.04)
+
+    #put text on the two arrows and mark them as x and y axis
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    highlighted_image = cv2.putText(highlighted_image, 'x-axis', (image.shape[1]-60, 60), font, 2, (0, 255, 0), 5, cv2.LINE_AA)
+    highlighted_image = cv2.putText(highlighted_image, 'y-axis', (20, image.shape[0]+120), font, 2, (0, 255, 0), 5, cv2.LINE_AA)
     return highlighted_image
 
 def safe_new_matrix(template_name:str,longest_side:int):

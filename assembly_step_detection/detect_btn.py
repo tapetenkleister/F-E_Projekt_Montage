@@ -63,8 +63,8 @@ end = time.time()
 duration = end - start
 # write detected_assembly_step, position and rotation to a txt.file for examination
 with open('Images_Results/result.txt', 'w') as f:
-    f.write(f'Detected assembly step: ||' + detected_assembly_step + '||')
-    f.write(f' with '+str(max_similarity)+'%'+' similarity\n')
-    f.write(f'Center position in x and y: '+str(index_x+1)+' '+str(index_y+1)+'\n')
+    f.write(f'Detected assembly step: ' + detected_assembly_step+'\n')
+    f.write(f'Similarity: '+str(max_similarity)+'% of proposed step was found\n')
+    f.write(f'Center position in x and y: '+str(index_x+1)+' , '+str(index_y+1)+'\n')
     f.write(f'Rotation: '+str(rotation_with_best_similarity)+'°'+'\n')
     f.write(f'Time needed for detection: '+str(round(duration*1000,2))+'ms'+'\n')
