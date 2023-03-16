@@ -196,6 +196,9 @@ class Fenster(QMainWindow):
             self.label_bl.clear()
             self.label_tr.clear()
             self.label_br.clear()
+            with open ('Images_Results/result.txt', 'r') as f:
+                line = f.read()
+            self.result.setText(line)
 
         
     def process_finished(self):
