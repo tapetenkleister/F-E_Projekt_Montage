@@ -236,6 +236,9 @@ class Fenster(QMainWindow):
                         shutil.copy(self.folder +"/"+ file, newpath)
                 # create json file for the new template
                 new_matrix = safe_new_matrix(self.template_name, self.longest_side)
+                with open ('Images_Results/error.txt', 'r') as f:
+                    line = f.read()
+                self.result.setText(line)
         else:
             # show gui again
             self.show()
