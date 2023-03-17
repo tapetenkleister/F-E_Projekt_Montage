@@ -89,7 +89,7 @@ class Fenster(QMainWindow):
         button_photo = QPushButton('Take photo', self)
         button_photo.setFixedSize(QSize(300, 100))
         button_photo.setToolTip('take <b>Photo</b>')
-        button_photo.clicked.connect(self.start_process)
+        button_photo.clicked.connect(self.take_image)
 
         # button to save new construction template
         button_save = QPushButton('Save new template', self)
@@ -105,7 +105,7 @@ class Fenster(QMainWindow):
         # creating action for capturing an image
         capture_picture = QAction('take &photo', self)
         capture_picture.setShortcut('Ctrl+F')
-        capture_picture.triggered.connect(self.start_process)
+        capture_picture.triggered.connect(self.take_image)
 
         # creating action for showing information
         instruction = QAction('&Instructions', self)
@@ -127,16 +127,16 @@ class Fenster(QMainWindow):
         # Create an outer layout
         outerLayout = QHBoxLayout(widget)
         # Create a layout to show the assembly step
-        leftLayout = QVBoxLayout(widget)
+        leftLayout = QVBoxLayout()
         # Create a layout for the upper images
         topLeftLayout = QHBoxLayout()
         # Create a layout for the lower images
         lowLeftLayout = QHBoxLayout()
         # Create a layout for buttons
-        rightLayout = QVBoxLayout(widget)
+        rightLayout = QVBoxLayout()
         # Set the alignment of the right layout
         rightLayout.setAlignment(Qt.AlignHCenter)
-         # Add labels the leftLayout
+        # Add labels the leftLayout                          
         topLeftLayout.addWidget(self.label_tl)
         topLeftLayout.addWidget(self.label_tr)
         lowLeftLayout.addWidget(self.label_bl)
@@ -154,8 +154,7 @@ class Fenster(QMainWindow):
         outerLayout.addLayout(leftLayout)
         outerLayout.addLayout(rightLayout)
         self.setCentralWidget(widget)
-        # Set the window's main layout
-        self.setLayout(outerLayout)
+        # Set the window size and title
         self.setGeometry(100, 100, 2750, 2000)
         self.setWindowTitle('Assembly inspection')
         self.show()
@@ -174,7 +173,7 @@ class Fenster(QMainWindow):
 
 
     @pyqtSlot()    
-    def start_process(self):
+    def take_image(self):
         """ This function is called when the user clicks on the button to capture an image.
         It starts the process to capture an image and shows the image in the corresponding label.
         """     

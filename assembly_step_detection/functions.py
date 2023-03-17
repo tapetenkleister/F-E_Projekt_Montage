@@ -1182,9 +1182,8 @@ def safe_new_matrix(template_name:str,longest_side:int):
         print("ERROR in saving a new building: ", e)
         with open('Images_Results/error.txt', 'w') as f:
             f.write(f'ERROR in saving a new building: '+str(e)+'\n')
-        #delete saved files
+        #delete saved files if an error occurs
         for filename in os.listdir(folder_path):
             os.remove(folder_path + "/" + filename)
         os.rmdir(folder_path)
-        
         return
