@@ -207,7 +207,10 @@ try:
     end = time.time()
     duration = end - start
     print(f'IDS image took: {duration}s')
-
+    with open('Images_Results/result.txt', 'w') as f:
+            f.write(f'Picture taken in {duration}s .\n')
+           
+            
 except Exception as e:
     with open('Images_Results/result.txt', 'w') as f:
             f.write(f'Something went wrong in taking an image with the IDS camera. Make sure its connected and the led is green.\n')

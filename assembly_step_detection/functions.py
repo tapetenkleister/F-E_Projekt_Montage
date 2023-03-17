@@ -884,7 +884,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
         #print('rotation is', degree,)
         #print("best_max_similarity", max_similarity,'\n')
        
-        if max_similarity > best_max_similarity:
+        if max_similarity >= best_max_similarity:
             rotation_with_best_similarity = degree
             best_max_similarity = max_similarity
             best_index_x = index_x
