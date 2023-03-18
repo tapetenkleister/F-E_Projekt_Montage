@@ -1,4 +1,5 @@
-Detected assembly step: ||Castle step 6|| with 92.1875% similarity
-Center position in x and y: 10 10
-Rotation: 0°
-Time needed for detection: 1540.2514934539795ms
+Detected assembly step: Castle step 6
+Similarity: 92.1875% of proposed step was found
+Center position in x and y: 10 , 10
+Rotation: 270°
+Time needed for detection: 1674.04ms

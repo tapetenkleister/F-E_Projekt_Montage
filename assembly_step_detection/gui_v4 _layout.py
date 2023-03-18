@@ -42,8 +42,8 @@ class Fenster(QMainWindow):
         self.p = None
         self.result = QLabel(' ', self)
         self.result.setGeometry(0,1600, 1000, 50)      
-        hight = 700
-        width = 700
+        self.hight = 700
+        self.width = 700
     
         # creates label for the captured image
         self.label_tl = QLabel(self)
@@ -68,7 +68,7 @@ class Fenster(QMainWindow):
         # shows an image of the selected construction plan
         self.label_plan = QLabel(self)
         self.pixmap_plan = QPixmap('Templates/Pyramid/Pyramid_thumbnail.png')
-        self.label_plan.setPixmap(self.pixmap_plan.scaled(700,700,Qt.KeepAspectRatio))
+        self.label_plan.setPixmap(self.pixmap_plan.scaled(self.width, self.hight, Qt.KeepAspectRatio))
 
         # creates an selection field for the construction plan
         self.construction_plan = QComboBox(self)
@@ -169,7 +169,7 @@ class Fenster(QMainWindow):
         for folder in os.listdir('Templates'):
             if self.construction_plan.currentText() == folder:
                 pixmap_plan = QPixmap('Templates/' + self.construction_plan.currentText() + '/' + self.construction_plan.currentText() + '_thumbnail.png')
-                self.label_plan.setPixmap(pixmap_plan.scaled(700,700,Qt.KeepAspectRatio))
+                self.label_plan.setPixmap(pixmap_plan.scaled(self.width, self.hight, Qt.KeepAspectRatio))
 
 
     @pyqtSlot()    
@@ -179,7 +179,6 @@ class Fenster(QMainWindow):
         """     
         # if no process is running
         if self.p is None:  
-            # self.message("Executing process")
             # Keep a reference to the QProcess (e.g. on self) while it's running.
             self.p = QProcess()  
             # Clean up once complete
@@ -198,6 +197,10 @@ class Fenster(QMainWindow):
             with open ('Images_Results/result.txt', 'r') as f:
                 line = f.read()
             self.result.setText(line)
+            # clear label if error occurs in taking a picture
+            if 'Error' in line:
+                self.label_tl.clear()
+                
 
         
     def process_finished(self):
@@ -267,13 +270,13 @@ class Fenster(QMainWindow):
                 line = f.read()
             self.result.setText(line)
             self.pixmap_tr = QPixmap('Images_Results/circles.jpg')
-            self.label_tr.setPixmap(self.pixmap_tr.scaled(700, 700, Qt.KeepAspectRatio))
+            self.label_tr.setPixmap(self.pixmap_tr.scaled(self.width, self.hight, Qt.KeepAspectRatio))
             self.pixmap_tl = QPixmap('Images_Results/image.jpg')
-            self.label_tl.setPixmap(self.pixmap_tl.scaled(700, 700, Qt.KeepAspectRatio))
+            self.label_tl.setPixmap(self.pixmap_tl.scaled(self.width, self.hight, Qt.KeepAspectRatio))
             self.pixmap_br = QPixmap('Images_Results/result.jpg')
-            self.label_br.setPixmap(self.pixmap_br.scaled(700, 700, Qt.KeepAspectRatio))
+            self.label_br.setPixmap(self.pixmap_br.scaled(self.width, self.hight, Qt.KeepAspectRatio))
             self.pixmap_bl = QPixmap('Images_Results/color_matrix.png')
-            self.label_bl.setPixmap(self.pixmap_bl.scaled(700, 700, Qt.KeepAspectRatio))
+            self.label_bl.setPixmap(self.pixmap_bl.scaled(self.width, self.hight, Qt.KeepAspectRatio))
             from detect_btn import detected_assembly_step
             detected_template = detected_assembly_step.split(' ')
             # change index of construction_plan to the detected template[0]

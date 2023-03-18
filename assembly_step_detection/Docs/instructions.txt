@@ -23,7 +23,7 @@ The images of the individual construction steps must be numbered consecutively.
 An overview image is also added to the folder as <TemplateName>_thumbnail.png. 
 As soon as the button is pressed, the user is prompted to enter the name of the new template. 
 It is important that the name is capitalized. 
-Next, the number of studs on the longest side of the structure must be provided. 
+Next, the number of knobs on the longest side of the structure must be provided. 
 Subsequently, a window opens where the folder with the templates is to be selected. 
 The photos from the selected folder will be copied to the newly created folder. 
 Finally, we call the save_new_matrix, which creates a .json file for the new template.
