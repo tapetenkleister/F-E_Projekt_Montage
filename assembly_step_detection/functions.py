@@ -1178,6 +1178,10 @@ def safe_new_matrix(template_name:str,longest_side:int):
         else:
             print ("ERROR: Dir not existent")
             return
+        
+        with open('Images_Results/error.txt', 'w') as f:
+            f.write(f'New matrix saved:' + template_name)
+
     except Exception as e:
         print("ERROR in saving a new building: ", e)
         with open('Images_Results/error.txt', 'w') as f:
