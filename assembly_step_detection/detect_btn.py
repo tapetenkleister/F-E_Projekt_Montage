@@ -2,7 +2,7 @@ from functions import *
 import cv2 
 import time
 import sys
-
+import datetime
 
 #-----------------------------------------------------------
 #this function is called when the button is pressed to detect the assembly step
@@ -90,3 +90,12 @@ with open('Images_Results/result.txt', 'w') as f:
     f.write(f'Center position in x and y: '+str(index_y+1)+' , '+str(index_x+1)+'\n')
     f.write(f'Rotation: '+str(rotation_with_best_similarity)+'°'+'\n')
     f.write(f'Time needed for detection: '+str(round(duration*1000,2))+'ms'+'\n')
+
+# txt file for examination and extended every time the button is pressed
+with open('Images_Results/history.txt', 'a') as f:
+    f.write(f'Detected assembly step: ' + detected_assembly_step+'\n')
+    f.write(f'Similarity: '+str(max_similarity)+'% of proposed step was found\n')
+    f.write(f'Center position in x and y: '+str(index_y+1)+' , '+str(index_x+1)+'\n')
+    f.write(f'Rotation: '+str(rotation_with_best_similarity)+'°'+'\n')
+    f.write(f'Time needed for detection: '+str(round(duration*1000,2))+'ms'+'\n')
+    f.write(f'time: '+str(datetime.datetime.now())+'\n')

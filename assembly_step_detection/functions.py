@@ -892,9 +892,9 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
             best_rotated_grid = rotated_plan_grid
             best_rotated_plan_position_grid = rotated_plan_position_grid
         
-        print("best_rot_grid", best_rotated_grid)
-        print("best_max_similarity", best_max_similarity)
-        print('rotation is', degree,'\n')
+    # print("best_rot_grid", best_rotated_grid)
+    # print("best_max_similarity", best_max_similarity)
+    # print('rotation is', degree,'\n')
 
     #print("best_rot_grid", best_rotated_grid)
     #print("best_max_similarity", best_max_similarity)
