@@ -838,10 +838,9 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
         # Rotate the plan grid clockwise and plan position grid by the specified degree
         comp_list = []
 
-        #only aplly rotation if degree is not 0
-        if degree != 0:
-            rotated_plan_grid = np.rot90(rotated_plan_grid,degree/90,axes=(1,0))
-            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,degree/90,axes=(1,0))
+        #apply rotation once for each loop in rotation and last one is 0 degree
+        rotated_plan_grid = np.rot90(rotated_plan_grid,1,axes=(1,0))
+        rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,1,axes=(1,0))
            
         #Add padding to the picture grid to ensure that the folding result is the same shape as the picture grid originally
         padded_matrix = add_padding(rotated_plan_grid, picture_grid,debug=False)
@@ -893,8 +892,9 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
             best_rotated_grid = rotated_plan_grid
             best_rotated_plan_position_grid = rotated_plan_position_grid
         
-        # print("best_max_similarity", best_max_similarity)
-        # print('rotation is', degree,'\n')
+        print("best_rot_grid", best_rotated_grid)
+        print("best_max_similarity", best_max_similarity)
+        print('rotation is', degree,'\n')
 
     #print("best_rot_grid", best_rotated_grid)
     #print("best_max_similarity", best_max_similarity)
