@@ -827,7 +827,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     best_index_y = 0
     best_rotated_grid = []
     best_rotated_plan_position_grid = []
-    rotation = [0, 90, 180, 270]
+    rotation = [90, 180, 270, 0]
 
     # Convert the plan grid and plan position grid to numpy arrays for easier manipulation
     rotated_plan_grid = np.array(plan_grid)    
