@@ -238,9 +238,10 @@ class Fenster(QMainWindow):
                         shutil.copy(self.folder +"/"+ file, newpath)
                 # create json file for the new template
                 new_matrix = safe_new_matrix(self.template_name, self.longest_side)
-                with open ('Images_Results/error.txt', 'r') as f:
+                with open ('Images_Results/result.txt', 'r') as f:
                     line = f.read()
                 self.result.setText(line)
+                
         else:
             # show gui again
             self.show()
@@ -268,6 +269,7 @@ class Fenster(QMainWindow):
             # read the result.txt file and show the result in the text box
             with open ('Images_Results/result.txt', 'r') as f:
                 line = f.read()
+            
             self.result.setText(line)
             self.pixmap_tr = QPixmap('Images_Results/circles.jpg')
             self.label_tr.setPixmap(self.pixmap_tr.scaled(self.width, self.hight, Qt.KeepAspectRatio))
@@ -282,6 +284,8 @@ class Fenster(QMainWindow):
             # change index of construction_plan to the detected template[0]
             self.construction_plan.setCurrentIndex(self.construction_plan.findText(detected_template[0]))
 
+            
+                
  
 if __name__ == '__main__':        
 
