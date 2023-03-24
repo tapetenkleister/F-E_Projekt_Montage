@@ -81,11 +81,27 @@ def display_lego_pattern(matrix:np.ndarray)->np.ndarray:
         raise ValueError("Input matrix doesn't consist of rows with same length")
     
     #color lime is just in because of issues with cv2 version, usually only green is present
-    color_map = {'green': [0, 200, 0],'lime': [0, 200, 0], 'yellow': [255, 255, 0],
-                 'blue': [0, 0, 255], 'red': [255, 0, 0], 'black': [50, 50, 50]}
+    color_map = {'green': [0, 200, 0], 'yellow': [255, 255, 0], 'blue': [0, 0, 255], 'red': [255, 0, 0], 'black': [50, 50, 50]}
 
     # Convert the color matrix to a 3D array of RGB values
     rgb_colors = np.array([[color_map[c] for c in row] for row in matrix])
+
+    # Upscale the image
+    factor = 50
+
+    # Define the circle radius and color
+    radius = factor//3
+
+    # upscale img by factor
+    upscaled_img = cv2.resize(rgb_colors, (rgb_colors.shape[0]*factor, rgb_colors.shape[1]*factor), interpolation=cv2.INTER_NEAREST)
+
+    #draw a circle each factor/2 pixels in the midlle of each factor*factor square
+    for i in range(0,upscaled_img.shape[0],factor):
+        for j in range(0,upscaled_img.shape[1],factor):
+            cv2.circle(upscaled_img, (i+factor//2, j+factor//2), radius, (0,0,0), 1)
+
+    #save the upscaled image to the rgb_colors variable        
+    rgb_colors = upscaled_img
 
     return rgb_colors
 
@@ -118,7 +134,7 @@ def extract_plate(image:np.ndarray, scale:float=1.0, debug:bool=False) ->np.ndar
     arucoParams.minMarkerDistanceRate = 0.025  #default 0.05
     detector = cv2.aruco.ArucoDetector(arucoDict, arucoParams)
 
-    #assume image is somewhat center
+    #assume image is relatively centered
     h, w, _ = image.shape
     center = (w/2,h/2)
     image = imutils.resize(image, width=int(w*scale), height=int(h*scale))
@@ -231,7 +247,7 @@ def get_color_of_roi(point:list, image:np.ndarray, sample_size:int = 12) ->str:
     Args:
         point (list): list of x and y coordinates
         image (np.ndarray): Image to sample from
-        sample_size (int, optional): Square region of interes with length of radius. Defaults to 12.
+        sample_size (int, optional): Square region of interest with twice length of sample_size. Defaults to 12.
 
     Returns:
         string: Name of the sampled color. Either yellow, red, blue or green.
@@ -413,7 +429,7 @@ def get_space(row:list):
             break
         distance = row[i+1][0] - row[i][0]
         distances.append(distance)
-    min(distances)
+    distance = min(distances)
     return distance
 
 def check_row(row, space, max_len, x_min, x_max):
@@ -811,7 +827,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
     best_index_y = 0
     best_rotated_grid = []
     best_rotated_plan_position_grid = []
-    rotation = [0, 90, 180, 270]
+    rotation = [90, 180, 270, 0]
 
     # Convert the plan grid and plan position grid to numpy arrays for easier manipulation
     rotated_plan_grid = np.array(plan_grid)    
@@ -822,10 +838,9 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
         # Rotate the plan grid clockwise and plan position grid by the specified degree
         comp_list = []
 
-        #only aplly rotation if degree is not 0
-        if degree != 0:
-            rotated_plan_grid = np.rot90(rotated_plan_grid,degree/90,axes=(1,0))
-            rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,degree/90,axes=(1,0))
+        #apply rotation once for each loop in rotation and last one is 0 degree
+        rotated_plan_grid = np.rot90(rotated_plan_grid,1,axes=(1,0))
+        rotated_plan_position_grid = np.rot90(rotated_plan_position_grid,1,axes=(1,0))
            
         #Add padding to the picture grid to ensure that the folding result is the same shape as the picture grid originally
         padded_matrix = add_padding(rotated_plan_grid, picture_grid,debug=False)
@@ -868,7 +883,7 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
         #print('rotation is', degree,)
         #print("best_max_similarity", max_similarity,'\n')
        
-        if max_similarity > best_max_similarity:
+        if max_similarity >= best_max_similarity:
             rotation_with_best_similarity = degree
             best_max_similarity = max_similarity
             best_index_x = index_x
@@ -877,8 +892,9 @@ def get_similarity(picture_grid, plan_grid, plan_position_grid):
             best_rotated_grid = rotated_plan_grid
             best_rotated_plan_position_grid = rotated_plan_position_grid
         
-        # print("best_max_similarity", best_max_similarity)
-        # print('rotation is', degree,'\n')
+    # print("best_rot_grid", best_rotated_grid)
+    # print("best_max_similarity", best_max_similarity)
+    # print('rotation is', degree,'\n')
 
     #print("best_rot_grid", best_rotated_grid)
     #print("best_max_similarity", best_max_similarity)
@@ -1101,17 +1117,34 @@ def higlight_target(image, image_position_matrix, template_position_matrix, inde
     template_legnth_y = gab_y * int(round(0.5*len(template_position_matrix)))
     template_legnth_x = gab_x * int(round(0.5*len(template_position_matrix[0])))
     #print("template_legnth_y,template_legnth_x", template_legnth_y,template_legnth_x)
-# Compute the start and end points of the target area in the image
+    # Compute the start and end points of the target area in the image
     start_point_y = int(y -  template_legnth_y)
     start_point_x = int(x -  template_legnth_x)
     #print("start_point_y,start_point_x", start_point_y,start_point_x)
 
     end_point_x = int(x +  template_legnth_x)
     end_point_y = int(y +   template_legnth_y)
-     # Highlight the target area in the image with a rectangle and a circle
+
+    # Highlight the target area in the image with a rectangle and a circle
     #print("end_point_y,end_point_x", end_point_y,end_point_x)
     highlighted_image = cv2.rectangle(image, (start_point_x,start_point_y),  (end_point_x,  end_point_y), (0, 255, 0), 5)
     highlighted_image = cv2.circle(image, (x,y), 3, (0, 255, 0), 2)
+
+    #add 100 black pixels on each side of the image
+    circumference = 75
+    highlighted_image = cv2.copyMakeBorder(highlighted_image, circumference, circumference, circumference, circumference, cv2.BORDER_CONSTANT, value=[0,0,0])
+
+
+    #add an arrow as x axis on the top part of the image from left to right
+    highlighted_image = cv2.arrowedLine(highlighted_image, (40, 40), (image.shape[1]-80, 40), (0, 255, 0), 6, tipLength=0.04)
+
+    #add an arrow as y axis on the left part of the image from top to bottom    
+    highlighted_image = cv2.arrowedLine(highlighted_image, (40, 40), (40, image.shape[0]+30), (0, 255, 0), 6, tipLength=0.04)
+
+    #put text on the two arrows and mark them as x and y axis
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    highlighted_image = cv2.putText(highlighted_image, 'x-axis', (image.shape[1]-60, 60), font, 2, (0, 255, 0), 5, cv2.LINE_AA)
+    highlighted_image = cv2.putText(highlighted_image, 'y-axis', (20, image.shape[0]+120), font, 2, (0, 255, 0), 5, cv2.LINE_AA)
     return highlighted_image
 
 def safe_new_matrix(template_name:str,longest_side:int):
@@ -1138,9 +1171,11 @@ def safe_new_matrix(template_name:str,longest_side:int):
 
     #create the directory list and id list sorted by filename
     for filename in os.listdir(folder_path):
-        dir_list.append(folder_path + "/" + filename)
-        #extract id from filename, only numbers are allowed
-        id_list.append(int(''.join(filter(str.isdigit, filename))))
+         #if no number is present in filename then skip the file because it is not a plan
+         if any(char.isdigit() for char in filename):
+            dir_list.append(folder_path + "/" + filename)
+            #extract id from filename, only numbers are allowed
+            id_list.append(int(''.join(filter(str.isdigit, filename))))
           
     dir_list.sort()
     id_list.sort()      
@@ -1154,7 +1189,7 @@ def safe_new_matrix(template_name:str,longest_side:int):
 
             # Extract the position and color matrices from the image
             matrix_plan_color, matrix_plan_position= get_matrix(image, circles_template)
-            position_matrix_name = "Bauschritt " + str(id_list[plan_index]) + " Positionen"
+            position_matrix_name = "step " + str(id_list[plan_index]) + " positions"
 
             # Convert the position matrix to integers
             matrix_plan_position = [[[int(num) for num in point] for point in row] for  row in matrix_plan_position]
